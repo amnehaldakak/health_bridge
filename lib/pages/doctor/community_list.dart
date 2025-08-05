@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'add_community.dart';
+// import 'add_community.dart';
 
 class CommunitiesPage extends StatelessWidget {
   const CommunitiesPage({super.key});
@@ -10,10 +10,10 @@ class CommunitiesPage extends StatelessWidget {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AddCommunityPage()),
-          );
+          // Navigator.push(
+          //   context,
+          //   MaterialPageRoute(builder: (context) => const AddCommunityPage()),
+          // );
         },
         child: const Icon(Icons.add),
       ),
