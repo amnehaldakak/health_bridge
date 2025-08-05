@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:health_bridge/pages/add_medicine.dart';
 import 'package:health_bridge/pages/doctor/add_records.dart';
+import 'package:health_bridge/pages/doctor/add_treatment_pathway.dart';
 import 'package:health_bridge/pages/doctor/community_doctor.dart';
 import 'package:health_bridge/pages/doctor/doctor.dart';
 import 'package:health_bridge/pages/doctor/home_doctor.dart';
 import 'package:health_bridge/pages/doctor/records_doctor.dart';
+import 'package:health_bridge/pages/doctor/treatment_pathway.dart';
 import 'package:health_bridge/pages/patient/addbloodpre.dart';
 import 'package:health_bridge/pages/patient/chat_bot_patient.dart';
 import 'package:health_bridge/pages/patient/community_patient.dart';
@@ -13,6 +16,7 @@ import 'package:health_bridge/pages/patient/medicine.dart';
 import 'package:health_bridge/pages/patient/patient.dart';
 import 'package:health_bridge/pages/patient/records_patient.dart';
 import 'package:health_bridge/pages/swich.dart';
+//
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/swich', // تحديد الصفحة الأولى

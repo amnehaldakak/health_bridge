@@ -46,6 +46,43 @@ class _DoctorState extends State<Doctor> {
         centerTitle: true,
         backgroundColor: theme.appBarTheme.backgroundColor,
       ),
+      drawer: Drawer(
+          child: ListView(children: [
+        ListView(
+          children: [
+            InkWell(
+              onTap: () {
+                // Get.toNamed('patentprofile');
+              },
+              child: DrawerHeader(
+                decoration: BoxDecoration(color: Colors.white),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundImage: AssetImage('image/PI.jpeg'),
+                      backgroundColor: Colors.grey,
+                    ),
+                    Expanded(
+                      child: ListTile(
+                        style: ListTileStyle.drawer,
+                        title: Text(
+                          'name ',
+                          style: TextStyle(
+                              fontSize: 20, color: theme.secondaryHeaderColor),
+                        ),
+                        subtitle: Text(
+                          'email',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ])),
       body: _children[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: theme.bottomNavigationBarTheme.backgroundColor,
