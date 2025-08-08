@@ -16,16 +16,20 @@ class _SwichState extends State<Swich> {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          TextButton(
-              onPressed: () {
-                context.goNamed('doctor');
-              },
-              child: Text('Doctor')),
-          TextButton(
-              onPressed: () {
-                context.goNamed('patient');
-              },
-              child: Text('Patient'))
+          Center(
+            child: TextButton(
+                onPressed: () {
+                  context.goNamed('doctor');
+                },
+                child: Text('Doctor')),
+          ),
+          Center(
+            child: TextButton(
+                onPressed: () {
+                  context.goNamed('patient');
+                },
+                child: Text('Patient')),
+          )
         ],
       ),
     );

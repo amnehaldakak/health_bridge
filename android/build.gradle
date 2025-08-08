@@ -1,3 +1,15 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        // تحديث إصدار Android Gradle Plugin إلى 8.6.0 كحد أدنى (أو أحدث)
+        classpath 'com.android.tools.build:gradle:8.6.0'
+        // تأكد من توافق إصدار Gradle مع AGP 8.6.0 (مثلاً Gradle 8.4)
+    }
+}
+
 allprojects {
     repositories {
         google()

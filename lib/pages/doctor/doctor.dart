@@ -3,6 +3,7 @@ import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.da
 // import 'package:health_bridge/constant/color.dart';
 import 'package:health_bridge/my_flutter_app_icons.dart';
 import 'package:health_bridge/pages/doctor/community_doctor.dart';
+import 'package:health_bridge/pages/doctor/community_list.dart';
 import 'package:health_bridge/pages/doctor/home_doctor.dart';
 import 'package:health_bridge/pages/doctor/records_doctor.dart';
 import 'package:health_bridge/pages/patient/chat_bot_patient.dart';
@@ -30,7 +31,7 @@ class _DoctorState extends State<Doctor> {
   final List<Widget> _children = [
     HomeDoctor(),
     RecordsDoctor(),
-    CommunityDoctor(),
+    CommunitiesPage(),
     ChatBotPatient(),
   ];
 

@@ -1,8 +1,18 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:health_bridge/api/firebase_api.dart';
 import 'package:health_bridge/config/routes/app_route_config.dart';
 import 'package:health_bridge/config/app_theme.dart';
+import 'package:health_bridge/firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // await FirebaseApi().initNotification();
+  NotificationService.initialize();
+  FirebaseMessaging.onBackgroundMessage(
+      NotificationService.firebaseMessagingBackgroundHandler);
   runApp(const MyApp());
 }
 

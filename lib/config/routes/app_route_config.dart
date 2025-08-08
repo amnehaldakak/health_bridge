@@ -6,6 +6,7 @@ import 'package:health_bridge/pages/doctor/add_treatment_pathway.dart';
 import 'package:health_bridge/pages/doctor/community_doctor.dart';
 import 'package:health_bridge/pages/doctor/doctor.dart';
 import 'package:health_bridge/pages/doctor/home_doctor.dart';
+import 'package:health_bridge/pages/doctor/patient_state.dart';
 import 'package:health_bridge/pages/doctor/records_doctor.dart';
 import 'package:health_bridge/pages/doctor/treatment_pathway.dart';
 import 'package:health_bridge/pages/patient/addbloodpre.dart';
@@ -96,6 +97,12 @@ final GoRouter appRouter = GoRouter(
           name: 'add_record',
           pageBuilder: (context, state) =>
               const MaterialPage(child: AddRecords()),
+        ),
+        GoRoute(
+          path: 'patient_state',
+          name: 'patient_state',
+          pageBuilder: (context, state) =>
+              const MaterialPage(child: PatientState()),
         ),
       ],
     ),

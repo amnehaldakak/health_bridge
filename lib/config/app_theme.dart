@@ -4,31 +4,44 @@ import 'package:health_bridge/constant/color.dart';
 final ThemeData appTheme = ThemeData(
   primaryColor: blue3,
   scaffoldBackgroundColor: Colors.white,
+  useMaterial3: true,
   appBarTheme: const AppBarTheme(
-    backgroundColor: blue2,
-    iconTheme: IconThemeData(color: blue5),
-    titleTextStyle: TextStyle(
-      color: blue5,
-      fontSize: 20,
-      fontWeight: FontWeight.bold,
-    ),
-    foregroundColor: blue5,
+    backgroundColor: Colors.transparent,
     elevation: 0,
+    centerTitle: true,
+    iconTheme: IconThemeData(color: blue3),
+    titleTextStyle: TextStyle(
+      color: blue3,
+      fontSize: 20,
+      fontWeight: FontWeight.w600,
+    ),
+  ),
+  cardTheme: CardTheme(
+    color: Colors.white,
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+    ),
+    margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
   ),
   bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-    backgroundColor: blue1,
+    backgroundColor: Colors.white,
     selectedItemColor: blue3,
     unselectedItemColor: blue4,
+    showSelectedLabels: true,
     showUnselectedLabels: true,
+    elevation: 8,
+    type: BottomNavigationBarType.fixed,
   ),
   textTheme: const TextTheme(
-    bodyLarge: TextStyle(color: blue1),
-    bodyMedium: TextStyle(color: blue1),
-    bodySmall: TextStyle(color: blue2),
-    titleLarge: TextStyle(color: blue1, fontWeight: FontWeight.bold),
-    titleMedium: TextStyle(color: blue2),
-    titleSmall: TextStyle(color: blue3),
-    labelLarge: TextStyle(color: blue3),
+    bodyLarge: TextStyle(color: blue1, fontSize: 16),
+    bodyMedium: TextStyle(color: blue1, fontSize: 14),
+    bodySmall: TextStyle(color: blue2, fontSize: 12),
+    titleLarge:
+        TextStyle(color: blue1, fontSize: 20, fontWeight: FontWeight.bold),
+    titleMedium: TextStyle(color: blue2, fontSize: 16),
+    titleSmall: TextStyle(color: blue3, fontSize: 14),
+    labelLarge: TextStyle(color: blue3, fontWeight: FontWeight.w600),
     labelMedium: TextStyle(color: blue2),
     labelSmall: TextStyle(color: blue3),
   ),
@@ -36,15 +49,25 @@ final ThemeData appTheme = ThemeData(
     style: ButtonStyle(
       backgroundColor: MaterialStatePropertyAll(blue3),
       foregroundColor: MaterialStatePropertyAll(blue5),
-      textStyle:
-          MaterialStatePropertyAll(TextStyle(fontWeight: FontWeight.bold)),
+      elevation: MaterialStatePropertyAll(0),
+      padding: MaterialStatePropertyAll(
+          EdgeInsets.symmetric(vertical: 12, horizontal: 20)),
+      shape: MaterialStatePropertyAll(RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(30),
+      )),
+      textStyle: MaterialStatePropertyAll(TextStyle(
+        fontWeight: FontWeight.bold,
+        fontSize: 14,
+      )),
     ),
   ),
   textButtonTheme: TextButtonThemeData(
     style: ButtonStyle(
       foregroundColor: MaterialStatePropertyAll(blue3),
-      textStyle:
-          MaterialStatePropertyAll(TextStyle(fontWeight: FontWeight.bold)),
+      textStyle: MaterialStatePropertyAll(TextStyle(
+        fontWeight: FontWeight.bold,
+        fontSize: 14,
+      )),
     ),
   ),
   colorScheme: ColorScheme.fromSwatch().copyWith(
@@ -57,5 +80,14 @@ final ThemeData appTheme = ThemeData(
   ),
   floatingActionButtonTheme: FloatingActionButtonThemeData(
     backgroundColor: blue3,
+    foregroundColor: Colors.white,
+    elevation: 4,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+    ),
+  ),
+  dividerTheme: DividerThemeData(
+    color: blue4.withOpacity(0.2),
+    thickness: 1,
   ),
 );
