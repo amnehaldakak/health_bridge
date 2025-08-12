@@ -17,11 +17,6 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->string('phone')->nullable();
-            $table->integer('age')->nullable();
-            $table->text('chronic_diseases')->nullable();
-            $table->string('specialization')->nullable();
-            $table->string('clinic')->nullable();
             $table->enum('role', ['patient', 'doctor', 'admin'])->default('patient');
             $table->boolean('is_approved')->default(false);
             $table->rememberToken();

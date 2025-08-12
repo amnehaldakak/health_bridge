@@ -22,11 +22,6 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'phone',
-        'age',
-        'chronic_diseases',
-        'specialization',
-        'clinic',
         'role',
         'is_approved',
     ];
@@ -54,34 +49,24 @@ class User extends Authenticatable
         ];
     }
 
-    public function doctorVerification()
+    public function doctor()
     {
-        return $this->hasOne(DoctorVerification::class, 'doctor_id');
+        return $this->hasOne(Doctor::class, 'doctor_id');
     }
 
-    public function isApprovedDoctor()
+    public function patient()
     {
-        return $this->role === 'doctor' && $this->is_approved;
+        return $this->hasOne(Patient::class, 'patient_id');
     }
 
-    public function doctorCases()
+    public function isPatient()
     {
-        return $this->hasMany(MedicalCase::class, 'doctor_id');
+        return $this->role === 'patient';
     }
 
-    public function patientCases()
+    public function isDoctor()
     {
-        return $this->hasMany(MedicalCase::class, 'patient_id');
-    }
-
-    public function medications()
-    {
-        return $this->hasMany(Medication::class, 'patient_id');
-    }
-
-    public function healthyValues()
-    {
-        return $this->hasMany(HealthyValue::class, 'patient_id');
+        return $this->role === 'doctor';
     }
 
 }

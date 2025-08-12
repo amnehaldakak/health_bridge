@@ -11,12 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('doctor_verifications', function (Blueprint $table) {
+        Schema::create('patients', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('doctor_id')->references('id')->on('users');
-            $table->string('certificate_path');
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
-            $table->text('rejection_reason')->nullable();
+            $table->foreignId('user_id')->references('id')->on('users')->cascadeOnDelete();
+            $table->date('birth_date');
+            $table->string('gender');
+            $table->string('phone');
+            $table->text('chronic_diseases')->nullable();
             $table->timestamps();
         });
     }
@@ -26,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('doctor_verifications');
+        Schema::dropIfExists('patients');
     }
 };

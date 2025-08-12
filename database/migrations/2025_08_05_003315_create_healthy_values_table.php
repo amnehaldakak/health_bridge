@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('healthy_values', function (Blueprint $table) {
             $table->id('values_id');
             $table->foreignId('disease_id')->references('disease_id')->on('diseases');
-            $table->foreignId('patient_id')->references('id')->on('users');
+            //$table->foreignId('patient_id')->references('patient_id')->on('patients');
             $table->integer('value');
             $table->integer('valuee')->default(0);
             $table->string('status')->default('null');

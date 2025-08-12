@@ -8,12 +8,12 @@ class MedicalCase extends Model
 {
     public function doctor()
     {
-        return $this->belongsTo(User::class, 'doctor_id');
+        return $this->belongsTo(Doctor::class);
     }
 
     public function patient()
     {
-        return $this->belongsTo(User::class, 'patient_id');
+        return $this->belongsTo(Patient::class);
     }
 
     public function medicationGroups()
