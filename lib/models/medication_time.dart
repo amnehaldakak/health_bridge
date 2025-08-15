@@ -1,5 +1,5 @@
 class MedicationTime {
-  final String medicationTimeId;
+  final String? medicationTimeId;
   final String userId;
   final String medicationName;
   final String amount;

@@ -104,6 +104,12 @@ final GoRouter appRouter = GoRouter(
           pageBuilder: (context, state) =>
               const MaterialPage(child: PatientState()),
         ),
+        GoRoute(
+          path: 'AddMedicinePage',
+          name: 'AddMedicinePage',
+          pageBuilder: (context, state) =>
+              const MaterialPage(child: AddMedicinePage()),
+        ),
       ],
     ),
   ],

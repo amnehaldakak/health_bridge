@@ -1,74 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:health_bridge/config/content/buildMedicationItem.dart';
 import 'package:health_bridge/config/content/build_section_title.dart';
 import 'package:health_bridge/pages/add_medicine.dart';
+import 'package:health_bridge/providers/medicine_add_provider.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui' as ui;
 
-class AddTreatmentPathway extends StatefulWidget {
+class AddTreatmentPathway extends ConsumerStatefulWidget {
   const AddTreatmentPathway({super.key});
 
   @override
-  State<AddTreatmentPathway> createState() => _AddTreatmentPlanPageState();
+  ConsumerState<AddTreatmentPathway> createState() =>
+      _AddTreatmentPlanPageState();
 }
 
-class _AddTreatmentPlanPageState extends State<AddTreatmentPathway> {
+class _AddTreatmentPlanPageState extends ConsumerState<AddTreatmentPathway> {
   final TextEditingController treatmentNameController = TextEditingController();
-  final List<AddMedicinePage> medicationForms = [];
-
-  @override
-  void initState() {
-    super.initState();
-    medicationForms.add(AddMedicinePage(key: UniqueKey()));
-  }
-
-  void _addMedicationForm() {
-    setState(() {
-      medicationForms.add(AddMedicinePage(key: UniqueKey()));
-    });
-  }
-
-  // void _saveTreatmentPlan() {
-  //   if (treatmentNameController.text.trim().isEmpty) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('يرجى إدخال اسم الخطة العلاجية')),
-  //     );
-  //     return;
-  //   }
-
-  //   bool allValid = true;
-  //   for (var form in medicationForms) {
-  //     if (!form.isFormValid()) {
-  //       allValid = false;
-  //       break;
-  //     }
-  //   }
-
-  //   if (!allValid) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('يرجى تعبئة جميع الحقول للأدوية')),
-  //     );
-  //     return;
-  //   }
-
-  //   // هنا يمكن حفظ الخطة في قاعدة بيانات أو إرسالها للسيرفر
-  //   ScaffoldMessenger.of(context).showSnackBar(
-  //     const SnackBar(content: Text('تم حفظ المسار العلاجي بنجاح')),
-  //   );
-  //   treatmentNameController.clear();
-  //   setState(() {
-  //     medicationForms.clear();
-  //     medicationForms.add(AddMedicationPage(key: UniqueKey()));
-  //   });
-  // }
 
   @override
   Widget build(BuildContext context) {
+    final medicines = ref.watch(medicineListProvider);
     final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('إضافة مسار علاجي'),
         centerTitle: true,
-        backgroundColor: theme.colorScheme.primary,
       ),
       body: Directionality(
         textDirection: ui.TextDirection.rtl,
@@ -83,24 +41,55 @@ class _AddTreatmentPlanPageState extends State<AddTreatmentPathway> {
                 controller: treatmentNameController,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
+                  hintText: 'أدخل اسم الخطة العلاجية',
                 ),
               ),
-              // const SizedBox(height: 20),
-              // ListView.builder(
-              //   shrinkWrap: true,
-              //   physics: const NeverScrollableScrollPhysics(),
-              //   itemCount: medicationForms.length,
-              //   itemBuilder: (_, index) => medicationForms[index],
-              // ),
               const SizedBox(height: 10),
               TextButton.icon(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AddMedicinePage(),
+                    ),
+                  );
+                },
                 icon: const Icon(Icons.add),
                 label: const Text('إضافة دواء'),
               ),
+              if (medicines.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                buildSectionTitle('الأدوية المضافة', theme),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: medicines.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 10.0,
+                    mainAxisSpacing: 10.0,
+                    childAspectRatio: 0.7,
+                  ),
+                  itemBuilder: (context, index) {
+                    final med = medicines[index];
+                    return MedicationItem(
+                      medication: med,
+                      theme: theme,
+                    );
+                  },
+                ),
+              ] else ...[
+                const SizedBox(height: 20),
+                const Text('لم يتم إضافة أي دواء بعد'),
+              ],
               const SizedBox(height: 30),
               ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('تم حفظ المسار العلاجي بنجاح')),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.colorScheme.primary,
                   minimumSize: const Size.fromHeight(50),

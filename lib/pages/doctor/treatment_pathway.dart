@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:health_bridge/config/content/buildMedicationItem.dart';
 import 'package:health_bridge/constant/color.dart';
 import 'package:health_bridge/models/medication_time.dart';
 import 'package:health_bridge/my_flutter_app_icons.dart';
@@ -260,7 +261,13 @@ class _TreatmentPathwayState extends State<TreatmentPathway> {
               ),
               itemBuilder: (context, medIndex) {
                 final med = plan.medications[medIndex];
-                return _buildMedicationItem(med, theme, planIndex: index);
+                return MedicationItem(
+                  medication: med,
+                  theme: theme,
+                  onEdit: () {
+                    _editMedication(med, planIndex: medIndex);
+                  },
+                );
               },
             ),
           ],

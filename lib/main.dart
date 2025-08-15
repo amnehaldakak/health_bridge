@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:health_bridge/api/firebase_api.dart';
 import 'package:health_bridge/config/routes/app_route_config.dart';
 import 'package:health_bridge/config/app_theme.dart';
@@ -13,7 +14,7 @@ void main() async {
   NotificationService.initialize();
   FirebaseMessaging.onBackgroundMessage(
       NotificationService.firebaseMessagingBackgroundHandler);
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {

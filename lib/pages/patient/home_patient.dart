@@ -32,7 +32,8 @@ class _HomePatientState extends State<HomePatient> {
                     icon: MyFlutterApp.noun_diabetes_test_7357853,
                     text: "Suger: 120")
               ],
-            )
+            ),
+            Text('data')
           ],
         ),
       ),

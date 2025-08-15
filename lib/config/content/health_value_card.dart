@@ -18,11 +18,11 @@ class HealthValueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Flexible(
+    return Expanded(
       child: Card(
         color: cardColor,
         child: Container(
-          padding: const EdgeInsets.only(left: 10, right: 10),
+          padding: EdgeInsets.only(top: 5, right: 5, left: 5, bottom: 5),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
