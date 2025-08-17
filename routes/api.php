@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DoctorApprovalController;
+use App\Http\Controllers\MedicalCaseController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -27,3 +28,14 @@ Route::controller(DoctorApprovalController::class)->group(function () {
     Route::Post('showCertificate/{id}','showCertificate');
     Route::Post('approveDoctor/{id}','approveDoctor');
 })->middleware('isAdmin');
+
+
+Route::controller(MedicalCaseController::class)->group(function () {
+
+    Route::Post('store','store')->middleware('auth:sanctum');
+    Route::Post('update/{case_id}','update')->middleware('auth:sanctum');
+    Route::get('getDoctorPatients','getDoctorPatients')->middleware('auth:sanctum');
+    Route::get('getPatientCasesByCurrentDoctor/{id}','getPatientCasesByCurrentDoctor')->middleware('auth:sanctum');
+    Route::get('getPatientCases/{id}','getPatientCases');
+    Route::get('show/{id}','show');
+});

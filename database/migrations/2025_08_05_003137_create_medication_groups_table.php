@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('medication_groups', function (Blueprint $table) {
             $table->id('group_id');
-            $table->foreignId('case_id')->references('case_id')->on('medical_cases');
+            $table->foreignId('case_id')->references('id')->on('medical_cases');
             $table->date('prescription_date');
             $table->timestamps();
         });
