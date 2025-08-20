@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DoctorApprovalController;
 use App\Http\Controllers\MedicalCaseController;
+use App\Http\Controllers\ApprovalController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -38,4 +39,11 @@ Route::controller(MedicalCaseController::class)->group(function () {
     Route::get('getPatientCasesByCurrentDoctor/{id}','getPatientCasesByCurrentDoctor')->middleware('auth:sanctum');
     Route::get('getPatientCases/{id}','getPatientCases');
     Route::get('show/{id}','show');
+});
+
+Route::controller(ApprovalController::class)->group(function () {
+
+    Route::get('pendingApprovals','pendingApprovals')->middleware('auth:sanctum');
+    Route::Post('approve/{id}','approve')->middleware('auth:sanctum');
+    Route::Post('reject/{id}','reject')->middleware('auth:sanctum');
 });

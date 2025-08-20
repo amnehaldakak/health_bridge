@@ -19,7 +19,14 @@ class AuthController extends Controller
         'email' => 'required|email|unique:users',
         'password' => 'required|string|min:8|confirmed',
         'role' => 'required|in:patient,doctor',
+        'profile_picture' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
     ]);
+
+    $profilePicturePath = null;
+    if ($request->hasFile('profile_picture')) {
+        $profilePicturePath = $request->file('profile_picture')->store('profile_pictures', 'public');
+    }
+    
 
     // إنشاء المستخدم الأساسي
     $user = User::create([
@@ -27,7 +34,8 @@ class AuthController extends Controller
         'email' => $request->email,
         'password' => Hash::make($request->password),
         'role' => $request->role,
-        'is_approved' => $request->role === 'patient' // يقبل المرضى تلقائياً
+        'is_approved' => $request->role === 'patient',
+        'profile_picture' => $profilePicturePath,
     ]);
 
     // إنشاء السجل الخاص حسب الدور
@@ -103,10 +111,30 @@ class AuthController extends Controller
                 'verification_status' => 'pending'
             ], 403);
         }
+
+
+            return response()->json([
+            'token' =>$user->createToken('auth_Token')->plainTextToken,
+            'user' => $user,
+            'doctor' => $doctor
+        
+        ]);
     }
+
+        if ($user->role === 'patient') {
+            $patient = Patient::where('user_id', $user->id)->first();
+
+            return response()->json([
+            'token' =>$user->createToken('auth_Token')->plainTextToken,
+            'user' => $user,
+            'patient' => $patient
+        
+        ]);
+        }
 
         return response()->json([
             'token' =>$user->createToken('auth_Token')->plainTextToken,
+            'user' => $user,
         
         ]);
     }

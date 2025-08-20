@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\MedicalCase;
 use App\Models\Patient;
 use App\Models\Doctor;
+use App\Models\DoctorPatientApproval;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
@@ -31,14 +32,50 @@ class MedicalCaseController extends Controller
 
         $userId = Auth::id();
     
-    // 2. البحث عن الطبيب المرتبط بهذا المستخدم
-    $doctor = Doctor::where('user_id', $userId)->first();
+        $doctor = Doctor::where('user_id', $userId)->first();
 
-            if (!$doctor) {
+        if (!$doctor) {
         return response()->json([
-            'message' => 'المستخدم الحالي ليس طبيباً مسجلاً'
+        'message' => 'المستخدم الحالي ليس طبيباً مسجلاً'
         ], 403);
-    }
+        }
+
+        $approval = DoctorPatientApproval::where('doctor_id', $doctor->id)
+            ->where('patient_id', $request->patient_id)
+            ->first();
+
+            // إذا لم توجد موافقة مسبقة
+        if (!$approval) {
+            // إنشاء طلب موافقة جديد
+            DoctorPatientApproval::create([
+                'doctor_id' => $doctor->id,
+                'patient_id' => $request->patient_id,
+                'status' => 'pending'
+            ]);
+
+            return response()->json([
+                'message' => 'تم إرسال طلب موافقة للمريض',
+                'requires_approval' => true
+            ], 202);
+        }
+
+        // إذا كانت الموافقة مرفوضة أو قيد الانتظار
+        if ($approval->status != 'approved') {
+            return response()->json([
+                'message' => 'يجب انتظار موافقة المريض قبل إضافة حالات جديدة',
+                'approval_status' => $approval->status
+            ], 403);
+        }
+
+        if ($request->hasFile('echo')) {
+            $echoPath = $request->file('echo')->store('echo_files', 'public');
+        }
+
+        if ($request->hasFile('lab_test')) {
+            $labTestPath = $request->file('lab_test')->store('lab_test_files', 'public');
+        }
+
+        // إذا كانت الموافقة موجودة ومقبولة
         $case = MedicalCase::create([
             'patient_id' => $request->patient_id,
             'doctor_id' => $doctor->id, 
@@ -51,8 +88,8 @@ class MedicalCaseController extends Controller
             'signs' => $request->signs,
             'vital_signs' => $request->vital_signs,
             'clinical_examination_results' => $request->clinical_examination_results,
-            'echo' => $request->echo,
-            'lab_test' => $request->lab_test,
+            'echo' => $echoPath,
+            'lab_test' => $labTestPath,
             'diagnosis' => $request->diagnosis,
         ]);
 
@@ -88,20 +125,30 @@ class MedicalCaseController extends Controller
             ->where('doctor_id', $doctor_id)
             ->firstOrFail();
 
+        if ($request->hasFile('echo')) {
+            $echoPath = $request->file('echo')->store('echo_files', 'public');
+            $case->echo = $echoPath;
+        }
+
+        if ($request->hasFile('lab_test')) {
+            $labTestPath = $request->file('lab_test')->store('lab_test_files', 'public');
+            $case->lab_test = $labTestPath;
+        }
+
         $case->update([
-            'chief_complaint' => $request->chief_complaint,
-            'symptoms' => $request->symptoms,
-            'medical_history' => $request->medical_history,
-            'surgical_history' => $request->surgical_history,
-            'allergic_history' => $request->allergic_history,
-            'smoking_status' => $request->smoking_status,
-            'signs' => $request->signs,
-            'vital_signs' => $request->vital_signs,
-            'clinical_examination_results' => $request->clinical_examination_results,
-            'echo' => $request->echo,
-            'lab_test' => $request->lab_test,
-            'diagnosis' => $request->diagnosis,
+            'chief_complaint' => $request->chief_complaint ?? $case->chief_complaint,
+            'symptoms' => $request->symptoms ?? $case->symptoms,
+            'medical_history' => $request->medical_history ?? $case->medical_history,
+            'surgical_history' => $request->surgical_history ?? $case->surgical_history,
+            'allergic_history' => $request->allergic_history ?? $case->allergic_history,
+            'smoking_status' => $request->smoking_status ?? $case->smoking_status,
+            'signs' => $request->signs ?? $case->signs,
+            'vital_signs' => $request->vital_signs ?? $case->vital_signs,
+            'clinical_examination_results' => $request->clinical_examination_results ?? $case->clinical_examination_results,
+            'diagnosis' => $request->diagnosis ?? $case->diagnosis,
         ]);
+
+        $case->save();
 
         return response()->json([
             'message' => 'Case updated successfully',

@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('password');
             $table->enum('role', ['patient', 'doctor', 'admin'])->default('patient');
             $table->boolean('is_approved')->default(false);
+            $table->string('profile_picture')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

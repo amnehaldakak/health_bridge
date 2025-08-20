@@ -24,6 +24,7 @@ class User extends Authenticatable
         'password',
         'role',
         'is_approved',
+        'profile_picture',
     ];
 
     /**
