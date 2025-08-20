@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:health_bridge/models/user.dart';
 import 'package:health_bridge/pages/add_medicine.dart';
+import 'package:health_bridge/pages/auth/doctor_info.dart';
+import 'package:health_bridge/pages/auth/login.dart';
+import 'package:health_bridge/pages/auth/patient_info.dart';
+import 'package:health_bridge/pages/auth/signup.dart';
 import 'package:health_bridge/pages/doctor/add_records.dart';
 import 'package:health_bridge/pages/doctor/add_treatment_pathway.dart';
 import 'package:health_bridge/pages/doctor/community_doctor.dart';
@@ -20,12 +25,12 @@ import 'package:health_bridge/pages/swich.dart';
 //
 
 final GoRouter appRouter = GoRouter(
-  initialLocation: '/swich', // تحديد الصفحة الأولى
+  initialLocation: '/login', // تحديد الصفحة الأولى
   routes: [
     GoRoute(
-      path: '/swich',
-      name: 'swich',
-      pageBuilder: (context, state) => const MaterialPage(child: Swich()),
+      path: '/login',
+      name: 'login',
+      pageBuilder: (context, state) => const MaterialPage(child: LoginPage()),
       routes: [
         // إضافة مسارات فرعية
         GoRoute(
@@ -110,6 +115,34 @@ final GoRouter appRouter = GoRouter(
           pageBuilder: (context, state) =>
               const MaterialPage(child: AddMedicinePage()),
         ),
+        GoRoute(
+          path: 'swich',
+          name: 'swich',
+          pageBuilder: (context, state) => const MaterialPage(child: Swich()),
+        ),
+        GoRoute(
+          path: 'signup',
+          name: 'signup',
+          pageBuilder: (context, state) =>
+              const MaterialPage(child: SignUpPage()),
+        ),
+        GoRoute(
+          path: 'doctor_info',
+          name: 'doctor_info',
+          pageBuilder: (context, state) {
+            final user = state.extra as User; // أو حدد النوع الصحيح بدل dynamic
+            return MaterialPage(
+              child: DoctorInfoPage(user: user),
+            );
+          },
+        ),
+
+        // GoRoute(
+        //   path: 'patient_info',
+        //   name: 'patient_info',
+        //   pageBuilder: (context, state) =>
+        //       const MaterialPage(child: PatientInfoPage(user: ,)),
+        // ),
       ],
     ),
   ],

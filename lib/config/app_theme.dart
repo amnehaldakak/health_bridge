@@ -90,4 +90,33 @@ final ThemeData appTheme = ThemeData(
     color: blue4.withOpacity(0.2),
     thickness: 1,
   ),
+  inputDecorationTheme: InputDecorationTheme(
+    filled: true,
+    fillColor: Colors.white,
+    contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide(color: blue4.withOpacity(0.5)),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide(color: blue4.withOpacity(0.5)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: blue3, width: 2),
+    ),
+    labelStyle: const TextStyle(color: blue2),
+    prefixIconColor: blue3,
+  ),
+  snackBarTheme: SnackBarThemeData(
+    backgroundColor: blue3,
+    contentTextStyle: const TextStyle(color: Colors.white, fontSize: 16),
+    behavior: SnackBarBehavior.floating,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+    ),
+    elevation: 4,
+    actionTextColor: blue5,
+  ),
 );
