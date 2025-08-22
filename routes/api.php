@@ -10,6 +10,7 @@ use App\Http\Controllers\MedicationGroupController;
 use App\Http\Controllers\MedicationController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\PatientMedicationController;
+use App\Http\Controllers\HealthyValueController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -76,4 +77,12 @@ Route::controller(PatientMedicationController::class)->group(function () {
 
     Route::Post('storePatientMedication','store')->middleware('auth:sanctum');
     Route::get('index','index')->middleware('auth:sanctum');
+});
+
+Route::controller(HealthyValueController::class)->group(function () {
+
+    Route::Post('store_value/{id}','store_value')->middleware('auth:sanctum');
+    Route::get('show_value/{id}','show_value')->middleware('auth:sanctum');
+    Route::get('delete_value/{id}','delete_value');
+    
 });
