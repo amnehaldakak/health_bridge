@@ -24,15 +24,20 @@ class Patient extends Model
         return $this->hasMany(MedicalCase::class);
     }
 
+        public function medicationGroups()
+    {
+        return $this->hasMany(MedicationGroup::class);
+    }
+
     public function approvals()
     {
         return $this->hasMany(DoctorPatientApproval::class);
     }
 
-    public function medications()
+    /*public function medications()
     {
         return $this->hasMany(Medication::class, 'patient_id');
-    }
+    }*/
 
     public function healthyValues()
     {

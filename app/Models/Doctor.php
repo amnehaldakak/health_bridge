@@ -26,6 +26,11 @@ class Doctor extends Model
         return $this->hasMany(MedicalCase::class);
     }
 
+    public function medicationGroups()
+    {
+        return $this->hasMany(MedicationGroup::class);
+    }
+
     public function approvals()
     {
         return $this->hasMany(DoctorPatientApproval::class);

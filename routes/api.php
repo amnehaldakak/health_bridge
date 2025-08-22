@@ -6,6 +6,10 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DoctorApprovalController;
 use App\Http\Controllers\MedicalCaseController;
 use App\Http\Controllers\ApprovalController;
+use App\Http\Controllers\MedicationGroupController;
+use App\Http\Controllers\MedicationController;
+use App\Http\Controllers\ReminderController;
+use App\Http\Controllers\PatientMedicationController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -46,4 +50,30 @@ Route::controller(ApprovalController::class)->group(function () {
     Route::get('pendingApprovals','pendingApprovals')->middleware('auth:sanctum');
     Route::Post('approve/{id}','approve')->middleware('auth:sanctum');
     Route::Post('reject/{id}','reject')->middleware('auth:sanctum');
+});
+
+Route::controller(MedicationGroupController::class)->group(function () {
+
+    Route::Post('storeMedicationGroup/{id}','store')->middleware('auth:sanctum');
+    Route::get('showMedicationGroup/{id}','show');
+    Route::get('destroy/{id}','destroy');
+});
+
+Route::controller(MedicationController::class)->group(function () {
+
+    Route::Post('confirmMedication/{id}','confirmMedication')->middleware('auth:sanctum');
+    Route::Post('updateMedication/{id}','update');
+    Route::get('destroyMedication/{id}','destroy');
+});
+
+Route::controller(ReminderController::class)->group(function () {
+
+    Route::Post('updateStatus/{id}','updateStatus');
+    Route::get('getPatientReminders','getPatientReminders')->middleware('auth:sanctum');
+});
+
+Route::controller(PatientMedicationController::class)->group(function () {
+
+    Route::Post('storePatientMedication','store')->middleware('auth:sanctum');
+    Route::get('index','index')->middleware('auth:sanctum');
 });

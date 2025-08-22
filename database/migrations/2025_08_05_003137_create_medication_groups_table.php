@@ -13,7 +13,9 @@ return new class extends Migration
     {
         Schema::create('medication_groups', function (Blueprint $table) {
             $table->id('group_id');
-            $table->foreignId('case_id')->references('id')->on('medical_cases');
+            $table->foreignId('case_id')->nullable()->references('id')->on('medical_cases')->onDelete('cascade');
+            $table->foreignId('patient_id')->references('id')->on('patients');
+            $table->foreignId('doctor_id')->nullable()->references('id')->on('doctors');
             $table->date('prescription_date');
             $table->timestamps();
         });

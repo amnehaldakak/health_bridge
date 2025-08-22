@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('reminder_times', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('medication_id')->references('medication_id')->on('medications');
+            $table->foreignId('medication_id')->references('medication_id')->on('medications')->onDelete('cascade');
             $table->date('date');
             $table->time('time');
             $table->boolean('status')->default(0);

@@ -13,14 +13,14 @@ return new class extends Migration
     {
         Schema::create('medications', function (Blueprint $table) {
             $table->id('medication_id');
-            $table->foreignId('group_id')->references('group_id')->on('medication_groups');
-            //$table->foreignId('patient_id')->references('patient_id')->on('patients');
+            $table->foreignId('group_id')->references('group_id')->on('medication_groups')->onDelete('cascade');
             $table->string('name');
             $table->string('dosage');
             $table->integer('frequency');
             $table->integer('duration');
-            $table->date('start_date');
-            $table->time('first_dose_time');
+            $table->date('start_date')->nullable();
+            $table->time('first_dose_time')->nullable();
+            $table->boolean('patient_confirmed')->default(false);
             $table->timestamps();
         });
     }
