@@ -26,7 +26,7 @@ class _MedicineState extends State<Medicine> {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          context.goNamed('AddMedicinePage');
+          context.goNamed('add_medicine');
         },
         child: Icon(Icons.add),
       ),

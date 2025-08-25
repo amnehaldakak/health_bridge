@@ -8,14 +8,14 @@ import 'package:health_bridge/pages/patient/home_patient.dart';
 import 'package:health_bridge/pages/patient/medicine.dart';
 import 'package:health_bridge/pages/patient/records_patient.dart';
 
-class Patient extends StatefulWidget {
-  const Patient({super.key});
+class Patient1 extends StatefulWidget {
+  const Patient1({super.key});
 
   @override
-  State<Patient> createState() => _PatientState();
+  State<Patient1> createState() => _PatientState();
 }
 
-class _PatientState extends State<Patient> {
+class _PatientState extends State<Patient1> {
   int _currentIndex = 0;
   //the list of of navigator bar
   final List<String> _nameWidget = [

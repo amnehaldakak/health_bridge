@@ -44,7 +44,7 @@ class _LoginPageState extends State<LoginPage> {
   void _submit() async {
     if (_formKey.currentState!.validate()) {
       try {
-        // الحصول على اسم الجهاز تلقائيًا
+        // الحصول على اسم الجهاز
         final deviceName = await getDeviceName();
 
         final loginData = {
@@ -52,33 +52,90 @@ class _LoginPageState extends State<LoginPage> {
           "password": _passwordCtrl.text,
           "device_name": deviceName,
         };
-        print('loginData: $loginData');
-        // إنشاء URL
-        const apiUrl = '$serverLink$loginLink';
 
+        const apiUrl = '$serverLink$loginLink';
         final response = await ApiService().postRequest(apiUrl, loginData);
 
-        // تحقق من نجاح العملية
         if (response['token'] != null) {
-          // حفظ التوكن أو أي عملية أخرى
           final token = response['token'];
-          // حفظ التوكن في SharedPreferences
-          print(token);
-          prefs.setString('token', token);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('تم تسجيل الدخول بنجاح'),
-            ),
-          );
+          final user = response['user'];
 
-          // الانتقال إلى الصفحة الرئيسية وحذف الصفحات السابقة
-          Navigator.pushNamedAndRemoveUntil(
-              context, '/home', (Route<dynamic> route) => false);
+          // 🟢 حفظ التوكن
+          await prefs.setString('token', token);
+          print("${prefs.getString('token')} --------------------------------");
+
+          // 🟢 حفظ كل حقل من user
+          await prefs.setInt('user_id', user['id']);
+          await prefs.setString('user_name', user['name'] ?? '');
+          await prefs.setString('user_email', user['email'] ?? '');
+          await prefs.setString('user_role', user['role'] ?? '');
+          await prefs.setInt('user_isApproved', user['is_approved'] ?? 0);
+          await prefs.setString(
+              'user_profilePicture', user['profile_picture'] ?? '');
+          await prefs.setString('user_createdAt', user['created_at'] ?? '');
+          await prefs.setString('user_updatedAt', user['updated_at'] ?? '');
+
+          // في حالة الطبيب
+          if (user['role'] == 'doctor') {
+            final doctor = response['doctor'];
+
+            await prefs.setInt('doctor_id', doctor['id']);
+            await prefs.setInt('doctor_userId', doctor['user_id']);
+            await prefs.setString(
+                'doctor_specialization', doctor['specialization'] ?? '');
+            await prefs.setString(
+                'doctor_certificatePath', doctor['certificate_path'] ?? '');
+            await prefs.setString('doctor_verificationStatus',
+                doctor['verification_status'] ?? '');
+            await prefs.setString(
+                'doctor_createdAt', doctor['created_at'] ?? '');
+            await prefs.setString(
+                'doctor_updatedAt', doctor['updated_at'] ?? '');
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('تم تسجيل الدخول كطبيب')),
+            );
+
+            context.go('/home_doctor');
+          }
+
+          // في حالة المريض
+          else if (user['role'] == 'patient') {
+            final patient = response['patient'];
+
+            await prefs.setInt('patient_id', patient['id']);
+            await prefs.setInt('patient_userId', patient['user_id']);
+            await prefs.setString(
+                'patient_birthDate', patient['birth_date'] ?? '');
+            await prefs.setString('patient_gender', patient['gender'] ?? '');
+            await prefs.setString('patient_phone', patient['phone'] ?? '');
+            await prefs.setString(
+                'patient_chronicDiseases', patient['chronic_diseases'] ?? '');
+            await prefs.setString(
+                'patient_createdAt', patient['created_at'] ?? '');
+            await prefs.setString(
+                'patient_updatedAt', patient['updated_at'] ?? '');
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('تم تسجيل الدخول كمريض')),
+            );
+
+            context.go('/home_patient');
+          }
+
+          // أي دور آخر
+          else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('تم تسجيل الدخول بنجاح')),
+            );
+            context.go('/home');
+          }
         } else if (response['is_approved'] != null &&
             response['is_approved'] == false) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content: Text(response['message'] ?? 'في انتظار الموافقة')),
+                content: Text(response['message'] ??
+                    'في انتظار مراجعة شهادتك من الإدارة')),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(

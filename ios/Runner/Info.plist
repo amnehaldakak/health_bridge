@@ -24,6 +24,18 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+
+	 <!-- صلاحيات الكاميرا والصورة -->
+    <key>NSCameraUsageDescription</key>
+    <string>يسمح هذا التطبيق بالتقاط الصور لاستخدامها كصورة شخصية للمستخدم</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>يسمح هذا التطبيق بالوصول إلى المعرض لاختيار صورة شخصية</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>يسمح هذا التطبيق بحفظ الصور في المعرض</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>يسمح هذا التطبيق باستخدام الميكروفون عند التقاط فيديو</string>
+
+	
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

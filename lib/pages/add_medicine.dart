@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:health_bridge/config/content/build_section_title.dart';
 import 'package:health_bridge/config/content/convert_time.dart';
 import 'package:health_bridge/models/medication_time.dart';
 import 'package:health_bridge/my_flutter_app_icons.dart';
 import 'package:health_bridge/providers/medicine_add_provider.dart';
+import 'package:health_bridge/service/api_service.dart';
 import 'package:intl/intl.dart';
 
 class AddMedicinePage extends ConsumerStatefulWidget {
@@ -52,7 +54,7 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
     }
   }
 
-  void _saveMedicine() {
+  void _saveMedicine() async {
     if (_formKey.currentState?.validate() != true) return;
 
     if (selectedTime == null || selectedStartDate == null) {
@@ -62,38 +64,37 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
       return;
     }
 
-    // تحويل وقت الجرعة الأولى إلى String بصيغة hh:mm
     final firstDose =
         "${convertTime(selectedTime!.hour.toString())}:${convertTime(selectedTime!.minute.toString())}";
 
-    // إضافة الدواء إلى القائمة
-    ref.read(medicineListProvider.notifier).addMedicine(
-          MedicationTime(
-            medicationTimeId: null, // أو قيمة ID إذا موجودة
-            userId: "101",
-            medicationName: medicineName.text,
-            amount: dosageAmount.text,
-            timePerDay: selectedRepetition,
-            firstDoseTime: firstDose,
-            startDate: selectedStartDate!,
-            durationDays: int.parse(selectedDurationDays),
-          ),
-        );
+    try {
+      // 🟢 استدعاء API
+      await ApiService().storePatientMedication(
+        name: medicineName.text,
+        dosage: dosageAmount.text,
+        frequency: selectedRepetition,
+        duration: int.parse(selectedDurationDays),
+        startDate: DateFormat('yyyy-MM-dd').format(selectedStartDate!),
+        firstDoseTime: firstDose,
+      );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('تم حفظ الدواء بنجاح')),
-    );
-    Navigator.of(context).pop();
-
-    // إعادة القيم للوضع الافتراضي
-    medicineName.clear();
-    dosageAmount.clear();
-    setState(() {
-      selectedTime = null;
-      selectedStartDate = null;
-      selectedRepetition = 1;
-      selectedDurationDays = '1';
-    });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم حفظ الدواء بنجاح')),
+      );
+      context.pop(); // reset form
+      medicineName.clear();
+      dosageAmount.clear();
+      setState(() {
+        selectedTime = null;
+        selectedStartDate = null;
+        selectedRepetition = 1;
+        selectedDurationDays = '1';
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('فشل حفظ الدواء: $e')),
+      );
+    }
   }
 
   @override

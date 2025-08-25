@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:health_bridge/config/content/custom_text_field.dart';
 import 'package:health_bridge/config/content/valid.dart';
+import 'package:health_bridge/service/api_service.dart';
 
 class ChatBotPatient extends StatefulWidget {
   const ChatBotPatient({super.key});
@@ -12,13 +13,9 @@ class ChatBotPatient extends StatefulWidget {
 class _ChatBotPatientState extends State<ChatBotPatient> {
   final TextEditingController _controller = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final List<_ChatMessage> _messages = [
-    _ChatMessage(text: "Hello! How can I help you today?", isSent: false),
-    _ChatMessage(text: "I need some advice on my health.", isSent: true),
-    _ChatMessage(text: "Sure! Please tell me more.", isSent: false),
-  ];
+  final List<_ChatMessage> _messages = [];
 
-  void _sendMessage() {
+  Future<void> _sendMessage() async {
     final text = _controller.text.trim();
     if (_formKey.currentState?.validate() ?? false) {
       if (text.isNotEmpty) {
@@ -26,7 +23,13 @@ class _ChatBotPatientState extends State<ChatBotPatient> {
           _messages.add(_ChatMessage(text: text, isSent: true));
           _controller.clear();
         });
-        // Optionally, trigger bot response here
+
+        // ⬅️ هنا نستدعي ApiService
+        final botReply = await ApiService.sendMessage(text);
+
+        setState(() {
+          _messages.add(_ChatMessage(text: botReply, isSent: false));
+        });
       }
     }
   }
@@ -92,12 +95,13 @@ class _ChatBotPatientState extends State<ChatBotPatient> {
                   children: [
                     Expanded(
                       child: CustomTextField(
-                          mycontroller: _controller,
-                          valid: (p0) {
-                            return Valid().vaidInput(p0!, 1, 200);
-                          },
-                          max: 1,
-                          hint1: 'Type your message...'),
+                        mycontroller: _controller,
+                        valid: (p0) {
+                          return Valid().vaidInput(p0!, 1, 200);
+                        },
+                        max: 1,
+                        hint1: 'Type your message...',
+                      ),
                     ),
                     const SizedBox(width: 8),
                     CircleAvatar(

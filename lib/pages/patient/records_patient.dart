@@ -2,21 +2,53 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:health_bridge/constant/color.dart';
 import 'package:health_bridge/config/content/health_value_card.dart';
+import 'package:health_bridge/models/patient.dart';
 import 'package:health_bridge/my_flutter_app_icons.dart';
 import 'package:calendar_timeline/calendar_timeline.dart';
 import 'package:animated_expandable_fab/animated_expandable_fab.dart';
+import 'package:health_bridge/pages/doctor/patient_cases.dart';
 
 class RecordsPatient extends StatefulWidget {
-  const RecordsPatient({super.key});
+  RecordsPatient({super.key});
 
   @override
   State<RecordsPatient> createState() => _RecordsPatientState();
 }
 
 class _RecordsPatientState extends State<RecordsPatient> {
+  Patient? patient; // جعلنا patient nullable لأنه سيتم تحميله بشكل غير متزامن
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPatientData();
+  }
+
+  Future<void> _loadPatientData() async {
+    try {
+      Patient loadedPatient = await Patient.getPatientFromPrefs();
+      setState(() {
+        patient = loadedPatient;
+      });
+    } catch (e) {
+      print("Error loading patient data: $e");
+      // يمكنك إضافة تعامل مع الأخطاء هنا
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    // عرض مؤشر تحميل أثناء جلب البيانات
+    if (patient == null) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -43,7 +75,13 @@ class _RecordsPatientState extends State<RecordsPatient> {
         ),
         body: Container(
           padding: const EdgeInsets.all(10),
-          child: TabBarView(children: [HealthValue(), Recored()]),
+          child: TabBarView(
+            children: [
+              HealthValue(),
+              PatientCases(
+                  patient: patient!), // استخدام patient بعد التأكد من وجوده
+            ],
+          ),
         ),
       ),
     );
@@ -82,6 +120,7 @@ class _HealthValueState extends State<HealthValue> {
               color: Colors.blue,
             ),
             onPressed: () {
+              // استخدام Navigator.pushNamed بدلاً من context.goNamed إذا لم يكن مسجلاً في GoRouter
               Navigator.pushNamed(context, 'addsugar');
             },
           ),

@@ -1,15 +1,20 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:health_bridge/constant/color.dart';
+import 'package:health_bridge/models/case.dart';
+import 'package:health_bridge/service/api_service.dart';
 import 'package:health_bridge/my_flutter_app_icons.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui' as ui;
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'treatment_pathway.dart';
 
-/// Patient state page that displays comprehensive medical information
-/// including clinical history, examination results, diagnosis, and treatment plan.
-/// Supports Arabic RTL text direction for medical documentation.
 class PatientState extends StatefulWidget {
-  const PatientState({Key? key}) : super(key: key);
+  final Case patientCase;
+
+  const PatientState({Key? key, required this.patientCase}) : super(key: key);
 
   @override
   State<PatientState> createState() => _PatientStateState();
@@ -20,11 +25,13 @@ class _PatientStateState extends State<PatientState> {
   late Map<String, String> _patientData;
   late Map<String, TextEditingController> _controllers;
   List<String> _medications = [];
+  File? _echoFile;
+  File? _labTestFile;
 
   @override
   void initState() {
     super.initState();
-    _patientData = _getMockPatientData();
+    _patientData = _getDynamicPatientData();
     _initializeControllers();
     _initializeMedications();
   }
@@ -35,18 +42,33 @@ class _PatientStateState extends State<PatientState> {
     super.dispose();
   }
 
-  /// Initialize text editing controllers for all editable fields
+  Map<String, String> _getDynamicPatientData() {
+    return {
+      'chiefComplaint': widget.patientCase.chiefComplaint ?? '',
+      'symptoms': widget.patientCase.symptoms ?? '',
+      'pastMedical': widget.patientCase.medicalHistory ?? '',
+      'pastSurgical': widget.patientCase.surgicalHistory ?? '',
+      'medications': widget.patientCase.allergicHistory ?? '',
+      'allergies': widget.patientCase.allergicHistory ?? '',
+      'smoking': widget.patientCase.smokingStatus ?? '',
+      'signs': widget.patientCase.signs ?? '',
+      'vitals': widget.patientCase.vitalSigns ?? '',
+      'examResult': widget.patientCase.clinicalExaminationResults ?? '',
+      'diagnosis': widget.patientCase.diagnosis ?? '',
+      'treatmentPlan': widget.patientCase.diagnosis ?? '',
+      'medicationPlan': widget.patientCase.diagnosis ?? '',
+    };
+  }
+
   void _initializeControllers() {
     _controllers = {};
     for (String key in _patientData.keys) {
       if (key != 'medicationPlan') {
-        // Exclude medicationPlan as it's handled separately
         _controllers[key] = TextEditingController(text: _patientData[key]);
       }
     }
   }
 
-  /// Initialize medications list from the medication plan
   void _initializeMedications() {
     String medicationPlan = _patientData['medicationPlan'] ?? '';
     _medications = medicationPlan
@@ -56,7 +78,6 @@ class _PatientStateState extends State<PatientState> {
         .toList();
   }
 
-  /// Dispose all text editing controllers
   void _disposeControllers() {
     for (var controller in _controllers.values) {
       controller.dispose();
@@ -76,10 +97,9 @@ class _PatientStateState extends State<PatientState> {
     );
   }
 
-  /// Builds the app bar with patient state title and edit button
   PreferredSizeWidget _buildAppBar(ThemeData theme) {
     return AppBar(
-      title: const Text('حالة المريض'),
+      title: const Text('تفاصيل الحالة'),
       centerTitle: true,
       backgroundColor: theme.appBarTheme.backgroundColor,
       actions: [
@@ -92,34 +112,62 @@ class _PatientStateState extends State<PatientState> {
     );
   }
 
-  /// Toggles between view and edit modes
   void _toggleEditMode() {
     setState(() {
       if (_isEditing) {
         _saveChanges();
+      } else {
+        _isEditing = !_isEditing;
       }
-      _isEditing = !_isEditing;
     });
   }
 
-  /// Saves the changes made in edit mode
-  void _saveChanges() {
+  Future<void> _saveChanges() async {
     try {
-      // Update patient data with controller values
+      // تحديث البيانات المحلية أولاً
       for (String key in _controllers.keys) {
         _patientData[key] = _controllers[key]!.text.trim();
       }
 
-      // Update medication plan from medications list
       _patientData['medicationPlan'] = _medications.join('، ');
 
-      _showSuccessSnackBar('تم حفظ التغييرات بنجاح');
+      // إرسال التحديثات إلى السيرفر
+      final response = await ApiService.updateMedicalCase(
+        caseId: widget.patientCase.id!,
+        chiefComplaint: _controllers['chiefComplaint']!.text,
+        symptoms: _controllers['symptoms']!.text,
+        medicalHistory: _controllers['pastMedical']!.text,
+        surgicalHistory: _controllers['pastSurgical']!.text,
+        allergicHistory: _controllers['allergies']!.text,
+        smokingStatus: _controllers['smoking']!.text,
+        signs: _controllers['signs']!.text,
+        vitalSigns: _controllers['vitals']!.text,
+        clinicalExaminationResults: _controllers['examResult']!.text,
+        diagnosis: _controllers['diagnosis']!.text,
+        echo: _echoFile,
+        labTest: _labTestFile,
+      );
+
+      // معالجة الاستجابة
+      final httpResponse = await http.Response.fromStream(response);
+      final responseBody = json.decode(httpResponse.body);
+
+      if (response.statusCode == 200) {
+        _showSuccessSnackBar('تم تحديث الحالة بنجاح');
+
+        setState(() {
+          _isEditing = false;
+        });
+      } else if (response.statusCode == 403) {
+        _showErrorSnackBar('غير مصرح لك بتعديل هذه الحالة');
+      } else {
+        _showErrorSnackBar('فشل في تحديث الحالة: ${responseBody['message']}');
+      }
     } catch (e) {
-      _showErrorSnackBar('فشل في حفظ التغييرات');
+      _showErrorSnackBar('فشل في حفظ التغييرات: $e');
     }
   }
 
-  /// Shows success snack bar with Arabic text
   void _showSuccessSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -130,7 +178,16 @@ class _PatientStateState extends State<PatientState> {
     );
   }
 
-  /// Builds the main body content with patient information sections
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   Widget _buildBody(BuildContext context, ThemeData theme) {
     return Stack(
       children: [
@@ -138,19 +195,15 @@ class _PatientStateState extends State<PatientState> {
           padding: const EdgeInsets.all(PatientStateConstants.padding),
           child: Column(
             children: [
+              _buildCaseInfoSection(context),
               _buildClinicalHistorySection(context),
               _buildClinicalExaminationSection(context),
               _buildDiagnosisSection(context),
-              // _buildTreatmentPlanSection(context),
-              // _buildMedicationsSection(context),
               const SizedBox(height: PatientStateConstants.buttonSpacing),
-
-              // Add extra padding for floating button
               const SizedBox(height: 80.0),
             ],
           ),
         ),
-        // Floating action button for treatment pathway navigation
         Positioned(
           bottom: 20.0,
           right: 20.0,
@@ -160,22 +213,62 @@ class _PatientStateState extends State<PatientState> {
     );
   }
 
-  /// Builds the clinical history section card
+  Widget _buildCaseInfoSection(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(
+          vertical: PatientStateConstants.cardMargin),
+      elevation: PatientStateConstants.cardElevation,
+      shape: RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.circular(PatientStateConstants.cardBorderRadius),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(PatientStateConstants.cardPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'معلومات الحالة',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            const Divider(),
+            ListTile(
+              leading: Icon(Icons.calendar_today, color: blue1),
+              title: Text(
+                  'تاريخ الإنشاء: ${_formatDate(widget.patientCase.createdAt)}'),
+            ),
+            ListTile(
+              leading: Icon(Icons.update, color: blue1),
+              title: Text(
+                  'آخر تحديث: ${_formatDate(widget.patientCase.updatedAt)}'),
+            ),
+            ListTile(
+              leading: Icon(Icons.medical_services, color: blue1),
+              title: Text('رقم الحالة: ${widget.patientCase.id}'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(String? dateString) {
+    if (dateString == null) return "غير معروف";
+
+    try {
+      final date = DateTime.parse(dateString);
+      return DateFormat('yyyy-MM-dd – HH:mm').format(date);
+    } catch (e) {
+      return "غير معروف";
+    }
+  }
+
   Widget _buildClinicalHistorySection(BuildContext context) {
     return _buildSectionCard(
       context,
       title: PatientStateConstants.clinicalHistoryTitle,
       icon: Icons.history_edu,
       items: [
-        Row(
-          children: [
-            Icon(
-              Icons.watch_later_outlined,
-              color: blue1,
-            ),
-            Text(DateFormat('yyyy-MM-dd – HH:mm').format(DateTime.now()))
-          ],
-        ),
         _buildEditableTile(
             PatientStateConstants.chiefComplaintLabel, 'chiefComplaint'),
         _buildEditableTile(PatientStateConstants.symptomsLabel, 'symptoms'),
@@ -191,7 +284,6 @@ class _PatientStateState extends State<PatientState> {
     );
   }
 
-  /// Builds the clinical examination section card
   Widget _buildClinicalExaminationSection(BuildContext context) {
     return _buildSectionCard(
       context,
@@ -205,7 +297,6 @@ class _PatientStateState extends State<PatientState> {
     );
   }
 
-  /// Builds the diagnosis section card
   Widget _buildDiagnosisSection(BuildContext context) {
     return _buildSectionCard(
       context,
@@ -217,141 +308,6 @@ class _PatientStateState extends State<PatientState> {
     );
   }
 
-  /// Builds the treatment plan section card
-  Widget _buildTreatmentPlanSection(BuildContext context) {
-    return _buildSectionCard(
-      context,
-      title: PatientStateConstants.treatmentPlanTitle,
-      icon: Icons.healing,
-      items: [
-        _buildEditableTile(
-            PatientStateConstants.treatmentPlanLabel, 'treatmentPlan'),
-      ],
-    );
-  }
-
-  /// Builds the medications section card
-  Widget _buildMedicationsSection(BuildContext context) {
-    return _buildSectionCard(
-      context,
-      title: PatientStateConstants.medicationsTitle,
-      icon: Icons.medication,
-      items: [
-        if (_isEditing)
-          _buildMedicationsEditSection()
-        else
-          _buildMedicationsViewSection(),
-      ],
-    );
-  }
-
-  /// Builds the medications view section
-  Widget _buildMedicationsViewSection() {
-    if (_medications.isEmpty) {
-      return ListTile(
-        title: Text(
-          PatientStateConstants.noMedicationsText,
-          style: const TextStyle(
-            fontStyle: FontStyle.italic,
-            color: Colors.grey,
-          ),
-        ),
-      );
-    }
-
-    return Column(
-      children: _medications
-          .map((medication) => ListTile(
-                leading: const Icon(Icons.medication, color: Colors.blue),
-                title: Text(medication),
-                dense: true,
-              ))
-          .toList(),
-    );
-  }
-
-  /// Builds the medications edit section
-  Widget _buildMedicationsEditSection() {
-    return Column(
-      children: [
-        // Display existing medications
-        ..._medications.asMap().entries.map((entry) {
-          int index = entry.key;
-          String medication = entry.value;
-          return _buildMedicationEditTile(index, medication);
-        }).toList(),
-
-        // Add new medication button
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: ElevatedButton.icon(
-            onPressed: _addNewMedication,
-            icon: const Icon(Icons.add),
-            label: Text(PatientStateConstants.addMedicationText),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Builds an individual medication edit tile
-  Widget _buildMedicationEditTile(int index, String medication) {
-    final controller = TextEditingController(text: medication);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: controller,
-              decoration: InputDecoration(
-                hintText: PatientStateConstants.medicationHintText,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                filled: true,
-                fillColor: Colors.grey.shade50,
-              ),
-              onChanged: (value) {
-                if (index < _medications.length) {
-                  _medications[index] = value;
-                }
-              },
-            ),
-          ),
-          const SizedBox(width: 8.0),
-          IconButton(
-            onPressed: () => _removeMedication(index),
-            icon: const Icon(Icons.delete, color: Colors.red),
-            tooltip: PatientStateConstants.removeMedicationText,
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Adds a new medication to the list
-  void _addNewMedication() {
-    setState(() {
-      _medications.add('');
-    });
-  }
-
-  /// Removes a medication from the list
-  void _removeMedication(int index) {
-    setState(() {
-      if (index < _medications.length) {
-        _medications.removeAt(index);
-      }
-    });
-  }
-
-  /// Builds an editable tile that can switch between view and edit modes
   Widget _buildEditableTile(String label, String dataKey) {
     if (_isEditing) {
       return _buildEditableField(label, dataKey);
@@ -360,7 +316,6 @@ class _PatientStateState extends State<PatientState> {
     }
   }
 
-  /// Builds an editable text field for edit mode
   Widget _buildEditableField(String label, String dataKey) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -377,8 +332,7 @@ class _PatientStateState extends State<PatientState> {
           const SizedBox(height: 8.0),
           TextField(
             controller: _controllers[dataKey],
-            maxLines:
-                dataKey == 'symptoms' || dataKey == 'treatmentPlan' ? 3 : 1,
+            maxLines: dataKey == 'symptoms' ? 3 : 1,
             decoration: InputDecoration(
               hintText: 'أدخل $label',
               border: OutlineInputBorder(
@@ -394,7 +348,6 @@ class _PatientStateState extends State<PatientState> {
     );
   }
 
-  /// Builds a read-only tile for view mode
   Widget _buildReadOnlyTile(String label, String? value) {
     return ListTile(
       title: Text(
@@ -409,18 +362,6 @@ class _PatientStateState extends State<PatientState> {
     );
   }
 
-  /// Shows error snack bar with Arabic text
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  /// Builds the floating treatment pathway navigation button
   Widget _buildTreatmentPathwayButton(BuildContext context, ThemeData theme) {
     return FloatingActionButton.extended(
       onPressed: () => _navigateToTreatmentPathway(context),
@@ -436,7 +377,6 @@ class _PatientStateState extends State<PatientState> {
     );
   }
 
-  /// Navigates to the treatment pathway page
   void _navigateToTreatmentPathway(BuildContext context) {
     try {
       Navigator.of(context).push(
@@ -449,7 +389,6 @@ class _PatientStateState extends State<PatientState> {
     }
   }
 
-  /// Builds a section card with title, icon, and content items
   Widget _buildSectionCard(
     BuildContext context, {
     required String title,
@@ -481,7 +420,6 @@ class _PatientStateState extends State<PatientState> {
     );
   }
 
-  /// Builds the section header with icon and title
   Widget _buildSectionHeader(
       ThemeData theme, Color color, IconData icon, String title) {
     return ListTile(
@@ -497,55 +435,26 @@ class _PatientStateState extends State<PatientState> {
     );
   }
 
-  /// Gets the display value or default text for empty values
   String _getDisplayValue(String? value) {
     return (value != null && value.trim().isNotEmpty)
         ? value
         : PatientStateConstants.undefinedText;
   }
-
-  /// Returns mock patient data for demonstration purposes
-  Map<String, String> _getMockPatientData() {
-    return {
-      'chiefComplaint': 'ألم في البطن منذ 3 أيام',
-      'symptoms': 'غثيان، إقياء، حرارة خفيفة',
-      'pastMedical': 'سكري من النوع الثاني',
-      'pastSurgical': 'استئصال زائدة دودية قبل 5 سنوات',
-      'medications': 'ميتفورمين 500mg مرتين يوميًا',
-      'allergies': 'تحسس من البنسلين',
-      'smoking': 'لا',
-      'signs': 'ألم بالجس في الربع السفلي الأيمن',
-      'vitals': 'الحرارة 37.8، الضغط 120/80، النبض 90',
-      'examResult': 'ألم موضعي + علامة بلومبرغ إيجابية',
-      'diagnosis': 'التهاب زائدة دودية',
-      'treatmentPlan': 'مضاد حيوي + تحضير لجراحة',
-      'medicationPlan': 'مضاد حيوي + تحضير لجراحة',
-    };
-  }
 }
 
-/// Constants for the PatientState widget
 class PatientStateConstants {
-  // Layout constants
   static const double padding = 16.0;
   static const double cardMargin = 8.0;
   static const double cardPadding = 12.0;
   static const double cardElevation = 3.0;
   static const double cardBorderRadius = 12.0;
   static const double buttonSpacing = 20.0;
-  static const double buttonHorizontalPadding = 24.0;
-  static const double buttonVerticalPadding = 12.0;
-
-  // Typography constants
-  static const double buttonFontSize = 16.0;
   static const double subtitleFontSize = 15.0;
+  static const double floatingButtonBorderRadius = 16.0;
 
-  // Arabic text constants
   static const String clinicalHistoryTitle = 'القصة السريرية';
   static const String clinicalExaminationTitle = 'الفحص السريري';
   static const String diagnosisTitle = 'التشخيص';
-  static const String treatmentPlanTitle = 'الخطة العلاجية';
-  static const String medicationsTitle = 'الأدوية الموصوفة';
 
   static const String chiefComplaintLabel = 'الشكاية الرئيسية';
   static const String symptomsLabel = 'الأعراض';
@@ -558,19 +467,7 @@ class PatientStateConstants {
   static const String vitalsLabel = 'العلامات الحيوية';
   static const String examResultLabel = 'نتيجة الفحص السريري';
   static const String diagnosisLabel = 'التشخيص';
-  static const String treatmentPlanLabel = 'الخطة العلاجية';
-  static const String medicationPlanLabel = 'الأدوية الموصوفة';
 
-  // Medication section constants
-  static const String addMedicationText = 'إضافة دواء جديد';
-  static const String removeMedicationText = 'حذف الدواء';
-  static const String medicationHintText = 'أدخل اسم الدواء والجرعة';
-  static const String noMedicationsText = 'لا توجد أدوية موصوفة';
-
-  static const String backButtonText = 'عودة';
-  static const String undefinedText = 'غير محدد';
-
-  // Treatment pathway navigation constants
   static const String treatmentPathwayButtonText = 'المسار العلاجي';
-  static const double floatingButtonBorderRadius = 16.0;
+  static const String undefinedText = 'غير محدد';
 }

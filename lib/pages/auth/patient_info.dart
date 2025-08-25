@@ -61,38 +61,37 @@ class _PatientInfoPageState extends State<PatientInfoPage> {
   }
 
   void _submit() async {
-    if (_formKey.currentState!.validate()) {
-      final patientData = {
-        "name": widget.user.name,
-        "email": widget.user.email,
-        "password": widget.user.password,
-        "password_confirmation": widget.user.password,
-        "role": "patient",
-        "birth_date": _birthDateCtrl.text,
-        "gender": _selectedGender,
-        "phone": _phoneCtrl.text,
-        "chronic_diseases": _chronicCtrl.text,
-      };
+    if (!_formKey.currentState!.validate()) return;
 
-      const apiUrl = '$serverLink$registerLink';
-
-      try {
-        final response = await ApiService().postRequest(apiUrl, patientData);
-
+    try {
+      final response = await ApiService.registerPatient(
+        name: widget.user.name ?? '',
+        email: widget.user.email ?? '',
+        password: widget.user.password ?? '',
+        passwordConfirmation: widget.user.passwordConfirmation ?? '',
+        birthDate: _birthDateCtrl.text,
+        gender: _selectedGender ?? '',
+        phone: _phoneCtrl.text,
+        chronicDiseases: _chronicCtrl.text,
+        profilePhoto: widget.user.profileImage, // اختياري
+      );
+      print(response.statusCode);
+      if (response.statusCode == 201) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('تم إنشاء الحساب بنجاح الرجاء تسجيل الدخول')),
+              content: Text(" تم تسجيل المريض بنجاح الرجاء تسجيل الدخول")),
         );
-        Future.delayed(const Duration(milliseconds: 500), () {
-          GoRouter.of(context)
-              .go('/login'); // استبدل '/login' بمسار صفحة تسجيل الدخول
-        });
-        print('Response from server: $response');
-      } catch (e) {
+        context.goNamed('login');
+      } else {
+        final respStr = await response.stream.bytesToString();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("حدث خطأ أثناء الإرسال: $e")),
+          SnackBar(content: Text("❌ فشل التسجيل: $respStr")),
         );
       }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("حدث خطأ: $e")),
+      );
     }
   }
 

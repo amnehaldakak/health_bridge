@@ -64,7 +64,13 @@ class _DoctorInfoPageState extends State<DoctorInfoPage> {
   }
 
   void _submit() async {
-    if (!_formKey.currentState!.validate() || _certificateFile == null) return;
+    if (!_formKey.currentState!.validate() || _certificateFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text("⚠️ يرجى تعبئة جميع الحقول المطلوبة وإرفاق الشهادة")),
+      );
+      return;
+    }
 
     showDialog(
       context: context,
@@ -74,25 +80,28 @@ class _DoctorInfoPageState extends State<DoctorInfoPage> {
 
     try {
       final response = await ApiService.registerDoctor(
-        name: widget.user.name,
-        email: widget.user.email,
-        password: widget.user.password,
-        passwordConfirmation: widget.user.passwordConfirmation,
+        name: widget.user.name ?? '',
+        email: widget.user.email ?? '',
+        password: widget.user.password ?? '',
+        passwordConfirmation: widget.user.passwordConfirmation ?? '',
         specialization: _specializationCtrl.text,
         clinicAddress: _clinicAddressCtrl.text,
         clinicPhone: _clinicPhoneCtrl.text,
         certificateFile: _certificateFile!,
+        profilePhoto: widget.user.profileImage, // 👈 صورة البروفايل (اختيارية)
       );
 
-      Navigator.of(context).pop(); // إغلاق التحميل
+      Navigator.of(context).pop(); // إغلاق مؤشر التحميل
 
-      if (response.statusCode == 201) {
+      final respStr = await response.stream.bytesToString();
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("✅ تم تسجيل الطبيب بنجاح")),
+          const SnackBar(
+              content: Text(" تم تسجيل الطبيب بنجاح الرجاء تسجيل الدخول")),
         );
         Navigator.pop(context); // رجوع أو انتقال لصفحة أخرى
       } else {
-        final respStr = await response.stream.bytesToString();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("❌ فشل التسجيل: $respStr")),
         );

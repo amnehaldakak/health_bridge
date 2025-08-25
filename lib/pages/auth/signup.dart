@@ -1,11 +1,12 @@
 // ---------------- صفحة إنشاء حساب -----------------
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:health_bridge/models/user.dart';
 import 'package:health_bridge/pages/auth/doctor_info.dart';
 import 'package:health_bridge/pages/auth/login.dart';
 import 'package:health_bridge/pages/auth/patient_info.dart';
-import 'package:health_bridge/service/api_service.dart';
+import 'package:image_picker/image_picker.dart';
 
 class SignUpPage extends StatefulWidget {
   static const route = '/signup';
@@ -23,6 +24,7 @@ class _SignUpPageState extends State<SignUpPage> {
   final _confirmCtrl = TextEditingController();
 
   String? _selectedRole;
+  File? _profileImage;
 
   bool _obscure1 = true;
   bool _obscure2 = true;
@@ -64,6 +66,57 @@ class _SignUpPageState extends State<SignUpPage> {
     return null;
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _profileImage = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<void> _takePhoto() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.camera);
+    if (pickedFile != null) {
+      setState(() {
+        _profileImage = File(pickedFile.path);
+      });
+    }
+  }
+
+  void _showImagePickerOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text("اختر من المعرض"),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text("التقط صورة"),
+              onTap: () {
+                Navigator.pop(context);
+                _takePhoto();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -74,7 +127,6 @@ class _SignUpPageState extends State<SignUpPage> {
       return;
     }
 
-    // عرض مؤشر تحميل
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -86,29 +138,27 @@ class _SignUpPageState extends State<SignUpPage> {
       email: _emailCtrl.text,
       password: _passwordCtrl.text,
       passwordConfirmation: _confirmCtrl.text,
+      profileImage: _profileImage,
     );
 
     try {
       if (_selectedRole == 'patient') {
-        Navigator.of(context).pop(); // إغلاق مؤشر التحميل
+        Navigator.of(context).pop();
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                PatientInfoPage(user: user), // 👈 مريض → PatientInfoPage
+            builder: (context) => PatientInfoPage(user: user),
           ),
         );
-        print('✅ patient account is created successfully');
       } else {
-        Navigator.of(context).pop(); // إغلاق مؤشر التحميل
+        Navigator.of(context).pop();
         context.goNamed(
           'doctor_info',
-          extra: user, // 👈 تمرير البيانات عبر extra
+          extra: user,
         );
-        print('✅ doctor account is created successfully');
       }
     } catch (e) {
-      Navigator.of(context).pop(); // إخفاء مؤشر التحميل عند الخطأ
+      Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('حدث خطأ أثناء إنشاء الحساب: $e')),
       );
@@ -141,7 +191,42 @@ class _SignUpPageState extends State<SignUpPage> {
                     ),
                     const SizedBox(height: 24),
 
-                    // الاسم
+                    // الصورة الشخصية بشكل احترافي
+                    Center(
+                      child: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 60,
+                            backgroundImage: _profileImage != null
+                                ? FileImage(_profileImage!)
+                                : const AssetImage('assets/profile.jpg'),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 4,
+                            child: GestureDetector(
+                              onTap: () => _showImagePickerOptions(context),
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue,
+                                  shape: BoxShape.circle,
+                                  border:
+                                      Border.all(color: Colors.white, width: 2),
+                                ),
+                                child: const Icon(
+                                  Icons.camera_alt,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
                     TextFormField(
                       controller: _nameCtrl,
                       decoration: const InputDecoration(
@@ -152,7 +237,6 @@ class _SignUpPageState extends State<SignUpPage> {
                     ),
                     const SizedBox(height: 16),
 
-                    // البريد
                     TextFormField(
                       controller: _emailCtrl,
                       decoration: const InputDecoration(
@@ -163,7 +247,6 @@ class _SignUpPageState extends State<SignUpPage> {
                     ),
                     const SizedBox(height: 16),
 
-                    // كلمة المرور
                     TextFormField(
                       controller: _passwordCtrl,
                       obscureText: _obscure1,
@@ -182,7 +265,6 @@ class _SignUpPageState extends State<SignUpPage> {
                     ),
                     const SizedBox(height: 16),
 
-                    // تأكيد كلمة المرور
                     TextFormField(
                       controller: _confirmCtrl,
                       obscureText: _obscure2,
@@ -201,7 +283,6 @@ class _SignUpPageState extends State<SignUpPage> {
                     ),
                     const SizedBox(height: 16),
 
-                    // الدور (Role)
                     DropdownButtonFormField<String>(
                       value: _selectedRole,
                       decoration: const InputDecoration(
@@ -223,7 +304,6 @@ class _SignUpPageState extends State<SignUpPage> {
                     ),
                     const SizedBox(height: 24),
 
-                    // زر إنشاء الحساب
                     ElevatedButton(
                       onPressed: _submit,
                       child: const Text("إنشاء حساب"),
