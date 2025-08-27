@@ -18,6 +18,7 @@ class ApiService {
   /// دالة عامة لإرسال POST request
   Future<Map<String, dynamic>> postRequest(
       String url, Map<String, dynamic> body) async {
+    print('---------------------${jsonEncode(body)}');
     try {
       final response = await http.post(
         Uri.parse(url),
@@ -148,7 +149,7 @@ class ApiService {
   }
 
   // get the patients of the current doctor
-  Future<List<Patient>> getDoctorPatients() async {
+  Future<List<PatientModel>> getDoctorPatients() async {
     print(headers);
     try {
       String url = "$serverLink$getDoctorPatientsLink";
@@ -168,7 +169,7 @@ class ApiService {
           if (patientsJson != null) {
             return patientsJson.map((p) {
               try {
-                return Patient.fromJson(p);
+                return PatientModel.fromJson(p);
               } catch (e) {
                 print('Error parsing patient: $e');
                 print('Problematic patient data: $p');
@@ -224,7 +225,7 @@ class ApiService {
 
   /// تابع للمريض
   Future<List<Case>> getPatientCasesForPatient(int patientId) async {
-    String url = '$serverLink/getPatientCases/$patientId';
+    String url = '$serverLink$getPatientCasesLink/$patientId';
     print("Patient URL: $url");
     final response = await http.get(Uri.parse(url), headers: headers);
 
@@ -482,4 +483,90 @@ class ApiService {
       throw Exception("Failed to store medication: ${response.body}");
     }
   }
+
+  Future<dynamic> storeHealthValue(int diseaseId, Map<String, dynamic> data,
+      {String? token}) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$serverLink$storeValueLink/$diseaseId'),
+            headers: headers,
+            body: json.encode(data),
+          )
+          .timeout(Duration(seconds: 30));
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('فشل في تخزين البيانات: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('خطأ في الاتصال: $e');
+    }
+  }
+
+  // عرض القيم الصحية لمرض معين
+  Future<dynamic> showHealthValues(int diseaseId) async {
+    String url = '$serverLink$showValueLink/$diseaseId';
+    print(url);
+    try {
+      final response = await http
+          .get(
+            Uri.parse(url),
+            headers: headers,
+          )
+          .timeout(Duration(seconds: 30));
+      print('------------------------------${response.body}');
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('فشل في جلب البيانات: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('خطأ في الاتصال: $e');
+    }
+  }
+
+  // حذف قيمة صحية
+  Future<dynamic> deleteHealthValue(int valueId) async {
+    String url = '$serverLink$deleteValueLink/$valueId';
+    print(url);
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('فشل في حذف البيانات: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('خطأ في الاتصال: $e');
+    }
+  }
+
+  // دالة تسجيل الخروج
+  Future<Map<String, dynamic>> logout(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$serverLink$logoutLink'),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'message': 'تم تسجيل الخروج بنجاح'};
+      } else {
+        return {
+          'success': false,
+          'message': 'فشل تسجيل الخروج: ${response.statusCode}'
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'خطأ في الاتصال: $e'};
+    }
+  }
+
+  deleteRequest(String s, {required String token}) {}
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:health_bridge/models/community.dart';
 import 'package:health_bridge/models/post.dart';
-import 'package:health_bridge/pages/doctor/post_detils.dart';
+import 'package:health_bridge/views/doctor/post_detils.dart';
 
 class CommunityDetailPage extends StatefulWidget {
   final Community community;

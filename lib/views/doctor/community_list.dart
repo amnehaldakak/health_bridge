@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:health_bridge/models/community.dart';
-import 'package:health_bridge/pages/doctor/community_detail.dart';
+import 'package:health_bridge/views/doctor/community_detail.dart';
 
 class CommunitiesPage extends StatelessWidget {
   final List<Community> communities = [

@@ -8,7 +8,7 @@ import 'package:health_bridge/models/patient.dart';
 import 'package:health_bridge/constant/color.dart';
 
 class PatientCases extends StatefulWidget {
-  final Patient patient;
+  final PatientModel patient;
 
   const PatientCases({super.key, required this.patient});
 

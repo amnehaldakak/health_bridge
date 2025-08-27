@@ -4,7 +4,7 @@ import 'package:health_bridge/constant/color.dart';
 import 'package:go_router/go_router.dart';
 
 class PatientCard extends StatelessWidget {
-  final Patient patient;
+  final PatientModel patient;
 
   const PatientCard({
     super.key,
@@ -23,7 +23,7 @@ class PatientCard extends StatelessWidget {
         child: Column(
           children: [
             _infoRow(
-                context, Icons.email, "البريد الإلكتروني", patient.user.email),
+                context, Icons.email, "البريد الإلكتروني", patient.user!.email),
             _divider(),
             _infoRow(context, Icons.phone, "الهاتف", patient.phone),
             _divider(),

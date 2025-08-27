@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:health_bridge/models/user.dart';
-import 'package:health_bridge/pages/auth/doctor_info.dart';
-import 'package:health_bridge/pages/auth/login.dart';
-import 'package:health_bridge/pages/auth/patient_info.dart';
+import 'package:health_bridge/views/auth/doctor_info.dart';
+import 'package:health_bridge/views/auth/login.dart';
+import 'package:health_bridge/views/auth/patient_info.dart';
 import 'package:image_picker/image_picker.dart';
 
 class SignUpPage extends StatefulWidget {

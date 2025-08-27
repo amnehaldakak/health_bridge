@@ -6,6 +6,7 @@ import 'package:health_bridge/api/firebase_api.dart';
 import 'package:health_bridge/config/routes/app_route_config.dart';
 import 'package:health_bridge/config/app_theme.dart';
 import 'package:health_bridge/firebase_options.dart';
+import 'package:health_bridge/providers/auth_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 late SharedPreferences prefs;
@@ -18,7 +19,14 @@ void main() async {
   NotificationService.initialize();
   FirebaseMessaging.onBackgroundMessage(
       NotificationService.firebaseMessagingBackgroundHandler);
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(
+    ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs), // ✅
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

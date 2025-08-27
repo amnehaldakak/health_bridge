@@ -2,34 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 // import 'package:health_bridge/constant/color.dart';
 import 'package:health_bridge/my_flutter_app_icons.dart';
-import 'package:health_bridge/pages/patient/chat_bot_patient.dart';
-import 'package:health_bridge/pages/patient/community_patient.dart';
-import 'package:health_bridge/pages/patient/home_patient.dart';
-import 'package:health_bridge/pages/patient/medicine.dart';
-import 'package:health_bridge/pages/patient/records_patient.dart';
+import 'package:health_bridge/views/doctor/community_doctor.dart';
+import 'package:health_bridge/views/doctor/community_list.dart';
+import 'package:health_bridge/views/doctor/home_doctor.dart';
+import 'package:health_bridge/views/doctor/records_doctor.dart';
+import 'package:health_bridge/views/patient/chat_bot_patient.dart';
+import 'package:health_bridge/views/patient/community_patient.dart';
+import 'package:health_bridge/views/patient/home_patient.dart';
+import 'package:health_bridge/views/patient/medicine.dart';
+import 'package:health_bridge/views/patient/records_patient.dart';
 
-class Patient1 extends StatefulWidget {
-  const Patient1({super.key});
+class Doctor extends StatefulWidget {
+  const Doctor({super.key});
 
   @override
-  State<Patient1> createState() => _PatientState();
+  State<Doctor> createState() => _DoctorState();
+
+  static Doctor? fromJson(doctorData) {}
 }
 
-class _PatientState extends State<Patient1> {
+class _DoctorState extends State<Doctor> {
   int _currentIndex = 0;
   //the list of of navigator bar
   final List<String> _nameWidget = [
     'Home',
     'Health Records',
-    'Medicine',
     'Community',
     'Chat Bot'
   ];
   final List<Widget> _children = [
-    HomePatient(),
-    RecordsPatient(),
-    Medicine(),
-    CommunityPatient(),
+    HomeDoctor(),
+    RecordsDoctor(),
+    CommunitiesPage(),
     ChatBotPatient(),
   ];
 
@@ -45,6 +49,43 @@ class _PatientState extends State<Patient1> {
         centerTitle: true,
         backgroundColor: theme.appBarTheme.backgroundColor,
       ),
+      drawer: Drawer(
+          child: ListView(children: [
+        ListView(
+          children: [
+            InkWell(
+              onTap: () {
+                // Get.toNamed('patentprofile');
+              },
+              child: DrawerHeader(
+                decoration: BoxDecoration(color: Colors.white),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundImage: AssetImage('image/PI.jpeg'),
+                      backgroundColor: Colors.grey,
+                    ),
+                    Expanded(
+                      child: ListTile(
+                        style: ListTileStyle.drawer,
+                        title: Text(
+                          'name ',
+                          style: TextStyle(
+                              fontSize: 20, color: theme.secondaryHeaderColor),
+                        ),
+                        subtitle: Text(
+                          'email',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ])),
       body: _children[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: theme.bottomNavigationBarTheme.backgroundColor,
@@ -74,14 +115,6 @@ class _PatientState extends State<Patient1> {
               weight: 3,
             ),
             label: 'Records',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(
-              MyFlutterApp.noun_medicine_7944091,
-              size: 30,
-              weight: 3,
-            ),
-            label: 'Medicine',
           ),
           BottomNavigationBarItem(
             icon: Icon(

@@ -1964,4 +1964,6 @@ class MyFlutterApp {
       IconData(0xf48e, fontFamily: _kFontFam, fontPackage: _kFontPkg);
   static const IconData tablets =
       IconData(0xf490, fontFamily: _kFontFam, fontPackage: _kFontPkg);
+
+  static IconData? nounDiabetesTest;
 }

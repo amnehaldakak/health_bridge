@@ -3,25 +3,26 @@ import 'package:go_router/go_router.dart';
 import 'package:health_bridge/models/case.dart';
 import 'package:health_bridge/models/patient.dart';
 import 'package:health_bridge/models/user.dart';
-import 'package:health_bridge/pages/add_medicine.dart';
-import 'package:health_bridge/pages/auth/login.dart';
-import 'package:health_bridge/pages/auth/signup.dart';
-import 'package:health_bridge/pages/auth/doctor_info.dart';
-import 'package:health_bridge/pages/doctor/add_treatment_pathway.dart';
-import 'package:health_bridge/pages/doctor/doctor.dart';
-import 'package:health_bridge/pages/doctor/home_doctor.dart';
-import 'package:health_bridge/pages/doctor/patient_cases.dart';
-import 'package:health_bridge/pages/doctor/records_doctor.dart';
-import 'package:health_bridge/pages/doctor/community_doctor.dart';
-import 'package:health_bridge/pages/doctor/add_records.dart';
-import 'package:health_bridge/pages/doctor/patient_state.dart';
-import 'package:health_bridge/pages/patient/home_patient.dart';
-import 'package:health_bridge/pages/patient/chat_bot_patient.dart';
-import 'package:health_bridge/pages/patient/community_patient.dart';
-import 'package:health_bridge/pages/patient/medicine.dart';
-import 'package:health_bridge/pages/patient/patient.dart';
-import 'package:health_bridge/pages/patient/records_patient.dart';
-import 'package:health_bridge/pages/patient/addbloodpre.dart';
+import 'package:health_bridge/views/add_medicine.dart';
+import 'package:health_bridge/views/auth/login.dart';
+import 'package:health_bridge/views/auth/signup.dart';
+import 'package:health_bridge/views/auth/doctor_info.dart';
+import 'package:health_bridge/views/doctor/add_treatment_pathway.dart';
+import 'package:health_bridge/views/doctor/doctor.dart';
+import 'package:health_bridge/views/doctor/home_doctor.dart';
+import 'package:health_bridge/views/doctor/patient_cases.dart';
+import 'package:health_bridge/views/doctor/records_doctor.dart';
+import 'package:health_bridge/views/doctor/community_doctor.dart';
+import 'package:health_bridge/views/doctor/add_records.dart';
+import 'package:health_bridge/views/doctor/patient_state.dart';
+import 'package:health_bridge/views/patient/add_sugar.dart';
+import 'package:health_bridge/views/patient/home_patient.dart';
+import 'package:health_bridge/views/patient/chat_bot_patient.dart';
+import 'package:health_bridge/views/patient/community_patient.dart';
+import 'package:health_bridge/views/patient/medicine.dart';
+import 'package:health_bridge/views/patient/patient.dart';
+import 'package:health_bridge/views/patient/records_patient.dart';
+import 'package:health_bridge/views/patient/addbloodpre.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
@@ -123,7 +124,7 @@ final GoRouter appRouter = GoRouter(
       path: '/patient_cases',
       name: 'patient_cases',
       pageBuilder: (context, state) {
-        final patient1 = state.extra as Patient;
+        final patient1 = state.extra as PatientModel;
         return MaterialPage(
           child: PatientCases(
             patient: patient1,
@@ -141,6 +142,11 @@ final GoRouter appRouter = GoRouter(
       path: '/add_medicine',
       name: 'add_medicine',
       pageBuilder: (context, state) => MaterialPage(child: AddMedicinePage()),
+    ),
+    GoRoute(
+      path: '/add_sugar',
+      name: 'add_sugar',
+      pageBuilder: (context, state) => MaterialPage(child: Addsugar()),
     ),
   ],
   debugLogDiagnostics: true,

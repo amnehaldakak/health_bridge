@@ -13,7 +13,7 @@ class RecordsDoctor extends StatefulWidget {
 }
 
 class _RecordsDoctorState extends State<RecordsDoctor> {
-  late Future<List<Patient>> _patientsFuture;
+  late Future<List<PatientModel>> _patientsFuture;
   final ApiService _apiService = ApiService();
 
   @override
@@ -48,7 +48,7 @@ class _RecordsDoctorState extends State<RecordsDoctor> {
           color: blue5,
         ),
       ),
-      body: FutureBuilder<List<Patient>>(
+      body: FutureBuilder<List<PatientModel>>(
         future: _patientsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {

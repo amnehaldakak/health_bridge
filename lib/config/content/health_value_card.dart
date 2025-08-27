@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 
 class HealthValueCard extends StatelessWidget {
-  HealthValueCard({
+  final Color cardColor;
+  final Color borderColor;
+  final Color iconColor;
+  final IconData icon;
+  final String text;
+  final VoidCallback? onDelete; // زر الحذف اختياري
+
+  const HealthValueCard({
     super.key,
     required this.cardColor,
     required this.borderColor,
     required this.iconColor,
     required this.icon,
     required this.text,
+    this.onDelete,
   });
-
-  final Color cardColor;
-  final Color borderColor;
-  final Color iconColor;
-  final IconData icon;
-  final String text;
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +24,7 @@ class HealthValueCard extends StatelessWidget {
       child: Card(
         color: cardColor,
         child: Container(
-          padding: EdgeInsets.only(top: 5, right: 5, left: 5, bottom: 5),
+          padding: const EdgeInsets.all(5),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -41,14 +43,21 @@ class HealthValueCard extends StatelessWidget {
                   color: iconColor,
                 ),
               ),
-              Text(
-                text,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: Colors.black),
+              Expanded(
+                child: Text(
+                  text,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Colors.black),
+                ),
               ),
+              if (onDelete != null)
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: onDelete,
+                ),
             ],
           ),
         ),

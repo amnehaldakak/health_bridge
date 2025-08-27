@@ -3,8 +3,8 @@ import 'package:health_bridge/config/content/buildMedicationItem.dart';
 import 'package:health_bridge/constant/color.dart';
 import 'package:health_bridge/models/medication_time.dart';
 import 'package:health_bridge/my_flutter_app_icons.dart';
-import 'package:health_bridge/pages/add_medicine.dart';
-import 'package:health_bridge/pages/doctor/add_treatment_pathway.dart';
+import 'package:health_bridge/views/add_medicine.dart';
+import 'package:health_bridge/views/doctor/add_treatment_pathway.dart';
 
 class TreatmentPlan {
   String name;

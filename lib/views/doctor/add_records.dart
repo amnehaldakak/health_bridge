@@ -22,10 +22,10 @@ class _AddRecordsState extends State<AddRecords> {
   final _diagnosisKey = GlobalKey<FormState>();
 
   // المرضى
-  List<Patient> allPatients = [];
-  List<Patient> filteredPatients = [];
+  List<PatientModel> allPatients = [];
+  List<PatientModel> filteredPatients = [];
   bool loading = true;
-  Patient? selectedPatient;
+  PatientModel? selectedPatient;
   final TextEditingController searchController = TextEditingController();
 
   // الملفات

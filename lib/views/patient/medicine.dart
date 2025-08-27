@@ -33,6 +33,9 @@ class _MedicineState extends State<Medicine> {
       body: Container(
         child: ListView(
           children: [
+            Row(
+              children: [IconButton(onPressed: () {}, icon: Icon(Icons.list))],
+            ),
             CalendarTimeline(
               initialDate: DateTime.now(),
               firstDate: DateTime(2020, 1, 1),

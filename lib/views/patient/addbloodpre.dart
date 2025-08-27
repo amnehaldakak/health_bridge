@@ -1,21 +1,62 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:health_bridge/constant/color.dart';
 import 'package:health_bridge/my_flutter_app_icons.dart';
+import 'package:health_bridge/providers/health_value_provider.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 
-class AddBloodPre extends StatefulWidget {
+class AddBloodPre extends ConsumerStatefulWidget {
   const AddBloodPre({super.key});
 
   @override
-  State<AddBloodPre> createState() => _AddBloodPreState();
+  ConsumerState<AddBloodPre> createState() => _AddBloodPreState();
 }
 
-class _AddBloodPreState extends State<AddBloodPre> {
-  double systolic = 110; // upper value
-  double diastolic = 70; // lower value
+class _AddBloodPreState extends ConsumerState<AddBloodPre> {
+  int systolic = 110;
+  int diastolic = 70;
+
+  /// تابع لحساب حالة ضغط الدم
+  String calculateBloodPressureStatus(int systolic, int diastolic) {
+    if (systolic < 90 || diastolic < 60) return 'Low';
+    if (systolic <= 120 && diastolic <= 80) return 'Normal';
+    if (systolic <= 129 && diastolic <= 84) return 'Elevated';
+    if (systolic <= 139 || diastolic <= 89) return 'High';
+    return 'Very High';
+  }
+
+  void _addBloodPressure() async {
+    final success =
+        await ref.read(healthValueControllerProvider.notifier).addHealthValue(
+              1, // diseaseId لضغط الدم
+              systolic,
+              valuee: diastolic,
+              status: calculateBloodPressureStatus(systolic, diastolic),
+            );
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم حفظ قياس الضغط بنجاح')),
+      );
+      context.pop();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('فشل في حفظ القياس')),
+      );
+    }
+  }
+
+  void saveBloodPressure() {
+    _addBloodPressure();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.primaryColor;
+    final textColor = theme.textTheme.bodyLarge?.color ?? Colors.black;
+
     return SliderTheme(
       data: SliderThemeData(
         trackHeight: 16,
@@ -32,16 +73,14 @@ class _AddBloodPreState extends State<AddBloodPre> {
           actions: [
             Container(
               decoration: BoxDecoration(
-                color: blue4,
+                color: primaryColor.withOpacity(0.7),
                 border: Border.all(),
                 borderRadius: BorderRadius.circular(30),
               ),
               child: IconButton(
-                highlightColor: blue4,
-                color: blue1,
-                onPressed: () {
-                  // handle save/submit action
-                },
+                highlightColor: primaryColor.withOpacity(0.5),
+                color: textColor,
+                onPressed: saveBloodPressure,
                 icon: const Icon(Icons.check_outlined),
               ),
             ),
@@ -53,7 +92,8 @@ class _AddBloodPreState extends State<AddBloodPre> {
           children: <Widget>[
             Text(
               'Blood Pressure: ${systolic.round()}/${diastolic.round()} mmHg',
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  fontSize: 20, fontWeight: FontWeight.bold, color: textColor),
             ),
             SfRadialGauge(
               axes: <RadialAxis>[
@@ -68,9 +108,8 @@ class _AddBloodPreState extends State<AddBloodPre> {
                   showTicks: true,
                   interval: 5,
                   showFirstLabel: false,
-                  axisLineStyle: const AxisLineStyle(
-                    cornerStyle: CornerStyle.bothCurve,
-                  ),
+                  axisLineStyle:
+                      const AxisLineStyle(cornerStyle: CornerStyle.bothCurve),
                   ranges: <GaugeRange>[
                     GaugeRange(
                         startValue: 70, endValue: 90, color: Colors.amber),
@@ -85,30 +124,30 @@ class _AddBloodPreState extends State<AddBloodPre> {
                   ],
                   pointers: <GaugePointer>[
                     RangePointer(
-                      value: systolic,
+                      value: systolic.toDouble(),
                       cornerStyle: CornerStyle.bothCurve,
                       width: 12,
                       sizeUnit: GaugeSizeUnit.logicalPixel,
                       color: Colors.white54,
                     ),
                     MarkerPointer(
-                      value: systolic,
+                      value: systolic.toDouble(),
                       enableDragging: true,
                       onValueChanged: (value) {
                         setState(() {
-                          systolic = value;
+                          systolic = value.round();
                         });
                       },
                       markerHeight: 20,
                       markerWidth: 20,
                       markerType: MarkerType.circle,
                       borderWidth: 2,
-                      color: blue1,
+                      color: primaryColor,
                     ),
                   ],
                   annotations: <GaugeAnnotation>[
-                    GaugeAnnotation(
-                      widget: const Text(
+                    const GaugeAnnotation(
+                      widget: Text(
                         'Systolic',
                         style: TextStyle(
                             fontSize: 15, fontWeight: FontWeight.bold),
@@ -129,9 +168,8 @@ class _AddBloodPreState extends State<AddBloodPre> {
                   showTicks: true,
                   interval: 5,
                   showFirstLabel: false,
-                  axisLineStyle: const AxisLineStyle(
-                    cornerStyle: CornerStyle.bothCurve,
-                  ),
+                  axisLineStyle:
+                      const AxisLineStyle(cornerStyle: CornerStyle.bothCurve),
                   ranges: <GaugeRange>[
                     GaugeRange(
                         startValue: 40, endValue: 60, color: Colors.amber),
@@ -144,30 +182,30 @@ class _AddBloodPreState extends State<AddBloodPre> {
                   ],
                   pointers: <GaugePointer>[
                     RangePointer(
-                      value: diastolic,
+                      value: diastolic.toDouble(),
                       cornerStyle: CornerStyle.bothCurve,
                       width: 12,
                       sizeUnit: GaugeSizeUnit.logicalPixel,
                       color: Colors.white54,
                     ),
                     MarkerPointer(
-                      value: diastolic,
+                      value: diastolic.toDouble(),
                       enableDragging: true,
                       onValueChanged: (value) {
                         setState(() {
-                          diastolic = value;
+                          diastolic = value.round();
                         });
                       },
                       markerHeight: 20,
                       markerWidth: 20,
                       markerType: MarkerType.circle,
                       borderWidth: 2,
-                      color: blue1,
+                      color: primaryColor,
                     ),
                   ],
                   annotations: <GaugeAnnotation>[
-                    GaugeAnnotation(
-                      widget: const Text(
+                    const GaugeAnnotation(
+                      widget: Text(
                         'Diastolic',
                         style: TextStyle(
                             fontSize: 15, fontWeight: FontWeight.bold),
@@ -181,7 +219,7 @@ class _AddBloodPreState extends State<AddBloodPre> {
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
+              children: [
                 LegendItem(color: Colors.green, label: 'Normal'),
                 LegendItem(color: Colors.yellow, label: 'High'),
                 LegendItem(color: Colors.orange, label: 'Very high'),
@@ -202,16 +240,19 @@ class LegendItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          margin: const EdgeInsets.all(10),
-          color: color,
-          height: 20,
-          width: 20,
-        ),
-        Text(label),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Row(
+        children: [
+          Container(
+            margin: const EdgeInsets.all(4),
+            color: color,
+            height: 16,
+            width: 16,
+          ),
+          Text(label),
+        ],
+      ),
     );
   }
 }

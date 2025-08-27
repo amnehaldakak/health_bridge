@@ -19,18 +19,22 @@ class _HomePatientState extends State<HomePatient> {
           children: [
             Row(
               children: [
-                HealthValueCard(
-                    cardColor: Colors.red.shade100,
-                    borderColor: Colors.red,
-                    iconColor: Colors.red,
-                    icon: MyFlutterApp.noun_blood_pressure_7315638,
-                    text: "pressuse: 120"),
-                HealthValueCard(
-                    cardColor: Colors.blue.shade100,
-                    borderColor: Colors.blue,
-                    iconColor: Colors.blue,
-                    icon: MyFlutterApp.noun_diabetes_test_7357853,
-                    text: "Suger: 120")
+                Expanded(
+                  child: HealthValueCard(
+                      cardColor: Colors.red.shade100,
+                      borderColor: Colors.red,
+                      iconColor: Colors.red,
+                      icon: MyFlutterApp.noun_blood_pressure_7315638,
+                      text: "pressuse: 120"),
+                ),
+                Expanded(
+                  child: HealthValueCard(
+                      cardColor: Colors.blue.shade100,
+                      borderColor: Colors.blue,
+                      iconColor: Colors.blue,
+                      icon: MyFlutterApp.noun_diabetes_test_7357853,
+                      text: "Suger: 120"),
+                )
               ],
             ),
             Text('data')
