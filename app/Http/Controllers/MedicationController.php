@@ -30,6 +30,7 @@ class MedicationController extends Controller
             'first_dose_time' => 'required|date_format:H:i',
         ]);
 
+
         $medication = Medication::where('medication_id', $id)->first();
         if (!$medication) {
         return response()->json(['message' => 'Medication not found'], 404);
@@ -48,13 +49,18 @@ class MedicationController extends Controller
             'patient_confirmed' => true,
         ]);
 
+        
+        //$medication->refresh();
+        
+
+
         // نستخدم ReminderController لإنشاء التذكيرات
         app('App\Http\Controllers\ReminderController')
-            ->generateReminders($medication);
+            ->generateReminders($medication->medication_id);
 
         return response()->json([
             'message' => 'Medication confirmed successfully',
-            //'data' => $medication->load('reminderTimes')
+            'data' => $medication->load('reminderTimes')
         ]);
     }
 

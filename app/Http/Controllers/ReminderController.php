@@ -11,10 +11,23 @@ use Illuminate\Support\Carbon;
 class ReminderController extends Controller
 {
     // إنشاء التذكيرات للدواء
-    public function generateReminders(Medication $medication)
+    public function generateReminders($medicationId)
     {
+        if (!is_numeric($medicationId)) {
+        throw new \Exception('Medication ID must be numeric');
+    }
         // حذف التذكيرات القديمة
-       // ReminderTime::where('medication_id', $medication->medication_id)->delete();
+        //ReminderTime::where('medication_id', $medication->medication_id)->delete();
+
+        $medication = Medication::where('medication_id', $medicationId)->first();
+        if (!$medication) {
+        throw new \Exception('Medication not found with ID: ' . $medicationId);
+    }
+
+    // ✅ التأكد من وجود البيانات المطلوبة
+    if (!$medication->start_date || !$medication->first_dose_time) {
+        throw new \Exception('Medication is missing start date or first dose time');
+    }
 
         $startDate = Carbon::parse($medication->start_date);
         $firstDoseTime = Carbon::parse($medication->first_dose_time);
@@ -32,11 +45,9 @@ class ReminderController extends Controller
                 if ($doseTime->format('H:i') < $firstDoseTime->format('H:i')) {
                     $currentDate->addDay();
                 }
-
                 
-
                 ReminderTime::create([
-                    'medication_id' => $medication->id,
+                    'medication_id' => $medication->medication_id,
                     'date' => $currentDate->format('Y-m-d'),
                     'time' => $doseTime->format('H:i:s'),
                     'status' => 0,

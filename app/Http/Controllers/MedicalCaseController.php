@@ -119,10 +119,14 @@ class MedicalCaseController extends Controller
         ]);*/
 
 
-        $doctor_id=Auth::id();
+        $userId = Auth::id();
+    
+        $doctor = Doctor::where('user_id', $userId)->first();
+
+        //$doctor_id=Auth::id();
 
         $case = MedicalCase::where('id', $case_id)
-            ->where('doctor_id', $doctor_id)
+            ->where('doctor_id', $doctor->id)
             ->firstOrFail();
 
         if ($request->hasFile('echo')) {
@@ -168,7 +172,7 @@ class MedicalCaseController extends Controller
             $query->where('doctor_id', $doctor->id);
         })
         ->with(['user' => function($query) {
-            $query->select('id', 'name', 'email');
+            $query->select('id', 'name', 'email', 'profile_picture');
         }])
         ->withCount(['medicalCase as cases_count' => function($query) use ($doctor) {
             $query->where('doctor_id', $doctor->id);
@@ -212,7 +216,7 @@ class MedicalCaseController extends Controller
         // الحصول على حالات مريض معين
     public function getPatientCases($patientId)
     {
-        $cases = MedicalCase::with(['doctor', 'patient'])
+        $cases = MedicalCase::with(['doctor.user', 'patient.user'])
             ->where('patient_id', $patientId)
             ->get();
 
@@ -222,7 +226,7 @@ class MedicalCaseController extends Controller
         // الحصول على تفاصيل حالة معينة
     public function show($caseId)
     {
-        $case = MedicalCase::with(['doctor', 'patient'])
+        $case = MedicalCase::with(['doctor.user', 'patient.user'])
             ->where('id', $caseId)
             ->firstOrFail();
 

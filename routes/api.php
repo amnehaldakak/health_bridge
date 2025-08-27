@@ -39,7 +39,7 @@ Route::controller(DoctorApprovalController::class)->group(function () {
 Route::controller(MedicalCaseController::class)->group(function () {
 
     Route::Post('store','store')->middleware('auth:sanctum');
-    Route::Post('update/{case_id}','update')->middleware('auth:sanctum');
+    Route::Post('updateMedicalCase/{case_id}','update')->middleware('auth:sanctum');
     Route::get('getDoctorPatients','getDoctorPatients')->middleware('auth:sanctum');
     Route::get('getPatientCasesByCurrentDoctor/{id}','getPatientCasesByCurrentDoctor')->middleware('auth:sanctum');
     Route::get('getPatientCases/{id}','getPatientCases');

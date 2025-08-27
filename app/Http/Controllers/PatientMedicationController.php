@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use App\Models\MedicationGroup;
 use App\Models\Medication;
+use App\Models\ReminderTime;
 use App\Models\Patient;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
@@ -43,11 +44,14 @@ class PatientMedicationController extends Controller
 
         // إنشاء التذكيرات
         app('App\Http\Controllers\ReminderController')
-            ->generateReminders($medication);
+            ->generateReminders($medication->id);
+
+        $reminderTimes = ReminderTime::where('medication_id', $medication->id)->get();
+    $medication->reminder_times = $reminderTimes;
 
         return response()->json([
             'message' => 'Medication added successfully',
-            'data' => $medication->load('reminderTimes')
+            'data' => $medication
         ], 201);
     }
 
