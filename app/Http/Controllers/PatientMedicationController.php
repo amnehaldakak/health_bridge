@@ -62,10 +62,35 @@ class PatientMedicationController extends Controller
         
         $medications = Medication::whereHas('medicationGroup', function($query) use ($patientId) {
             $query->where('patient_id', $patientId);
-        })->with(['medicationGroup.doctor', 'reminderTimes'])->get();
+        })->with(['medicationGroup.doctor'])->get();
 
         return response()->json([
             'data' => $medications
         ]);
+    }
+
+    public function medicationReminderTimes($id)
+    {
+        
+        $reminderTimes = ReminderTime::where('medication_id', $id)
+        ->with(['medication.medicationGroup.doctor'])->get();
+
+        $firstReminder = $reminderTimes->first();
+        $commonData = [
+            'medication' => $firstReminder->medication,
+            'doctor' => $firstReminder->medication->medicationGroup->doctor
+        ];
+
+        $reminderTimes->each(function ($reminder) {
+            $reminder->unsetRelation('medication');
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => array_merge($commonData, [
+                'reminder_times' => $reminderTimes
+            ])
+        ]);
+
     }
 }

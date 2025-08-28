@@ -62,7 +62,7 @@ class MedicationGroupController extends Controller
     public function show($id)
     {
         $medicationGroup = MedicationGroup::with([
-                'medications.reminderTimes',
+                'medications',
                 'patient',
                 'doctor'
             ])

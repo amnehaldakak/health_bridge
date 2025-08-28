@@ -11,6 +11,7 @@ use App\Http\Controllers\MedicationController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\PatientMedicationController;
 use App\Http\Controllers\HealthyValueController;
+use App\Http\Controllers\ProfileController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -77,6 +78,7 @@ Route::controller(PatientMedicationController::class)->group(function () {
 
     Route::Post('storePatientMedication','store')->middleware('auth:sanctum');
     Route::get('index','index')->middleware('auth:sanctum');
+    Route::get('medicationReminderTimes/{id}','medicationReminderTimes');
 });
 
 Route::controller(HealthyValueController::class)->group(function () {
@@ -84,5 +86,13 @@ Route::controller(HealthyValueController::class)->group(function () {
     Route::Post('store_value/{id}','store_value')->middleware('auth:sanctum');
     Route::get('show_value/{id}','show_value')->middleware('auth:sanctum');
     Route::get('delete_value/{id}','delete_value');
+    
+});
+
+Route::controller(ProfileController::class)->group(function () {
+
+    Route::get('showProfile','show')->middleware('auth:sanctum');
+    Route::Post('updateProfile','update')->middleware('auth:sanctum');
+    Route::get('destroyProfile','destroy')->middleware('auth:sanctum');
     
 });

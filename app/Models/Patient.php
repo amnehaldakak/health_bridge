@@ -16,7 +16,7 @@ class Patient extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'patient_id', 'patient_id');
     }
 
     public function medicalCase()
