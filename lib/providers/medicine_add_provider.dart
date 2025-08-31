@@ -5,11 +5,20 @@ class MedicineListNotifier extends StateNotifier<List<MedicationTime>> {
   MedicineListNotifier() : super([]);
 
   void addMedicine(MedicationTime medicine) {
-    state = [...state, medicine]; // Add new medicine to the list
+    state = [...state, medicine];
+  }
+
+  void removeMedicine(MedicationTime medicine) {
+    state = state.where((m) => m != medicine).toList();
+  }
+
+  void clearMedicines() {
+    state = [];
   }
 }
 
-// Provider for the medicine list
+// Provider
 final medicineListProvider =
     StateNotifierProvider<MedicineListNotifier, List<MedicationTime>>(
-        (ref) => MedicineListNotifier());
+  (ref) => MedicineListNotifier(),
+);

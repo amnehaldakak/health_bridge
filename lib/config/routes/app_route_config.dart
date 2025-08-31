@@ -23,6 +23,7 @@ import 'package:health_bridge/views/patient/medicine.dart';
 import 'package:health_bridge/views/patient/patient.dart';
 import 'package:health_bridge/views/patient/records_patient.dart';
 import 'package:health_bridge/views/patient/addbloodpre.dart';
+import 'package:health_bridge/views/profile_page.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
@@ -126,7 +127,7 @@ final GoRouter appRouter = GoRouter(
       pageBuilder: (context, state) {
         final patient1 = state.extra as PatientModel;
         return MaterialPage(
-          child: PatientCases(
+          child: PatientCasesPage(
             patient: patient1,
           ),
         );
@@ -135,8 +136,13 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/add_treatment_Pathway',
       name: 'add_treatment_Pathway',
-      pageBuilder: (context, state) =>
-          const MaterialPage(child: AddTreatmentPathway()),
+      pageBuilder: (context, state) {
+        final caseId = state.extra as int;
+        return MaterialPage(
+            child: AddTreatmentPathway(
+          caseId: caseId,
+        ));
+      },
     ),
     GoRoute(
       path: '/add_medicine',
@@ -147,6 +153,11 @@ final GoRouter appRouter = GoRouter(
       path: '/add_sugar',
       name: 'add_sugar',
       pageBuilder: (context, state) => MaterialPage(child: Addsugar()),
+    ),
+    GoRoute(
+      path: '/profile_page',
+      name: 'profile_page',
+      pageBuilder: (context, state) => MaterialPage(child: ProfilePage()),
     ),
   ],
   debugLogDiagnostics: true,

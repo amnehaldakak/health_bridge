@@ -1,14 +1,17 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:health_bridge/config/content/buildMedicationItem.dart';
 import 'package:health_bridge/config/content/build_section_title.dart';
+import 'package:health_bridge/providers/auth_provider.dart';
 import 'package:health_bridge/views/add_medicine.dart';
 import 'package:health_bridge/providers/medicine_add_provider.dart';
-import 'package:intl/intl.dart';
+import 'package:health_bridge/models/medication_time.dart';
 import 'dart:ui' as ui;
 
 class AddTreatmentPathway extends ConsumerStatefulWidget {
-  const AddTreatmentPathway({super.key});
+  final int caseId;
+  const AddTreatmentPathway({super.key, required this.caseId});
 
   @override
   ConsumerState<AddTreatmentPathway> createState() =>
@@ -17,6 +20,39 @@ class AddTreatmentPathway extends ConsumerStatefulWidget {
 
 class _AddTreatmentPlanPageState extends ConsumerState<AddTreatmentPathway> {
   final TextEditingController treatmentNameController = TextEditingController();
+
+  bool isLoading = false;
+
+  void _saveMedicationGroup() async {
+    final medicines = ref.read(medicineListProvider);
+
+    // تحويل قائمة MedicationTime إلى List<Map>
+    final medsData = medicines
+        .map((med) => {
+              "name": med.medicationName,
+              "dosage": med.amount,
+              "frequency": med.timePerDay,
+              "duration": med.durationDays,
+            })
+        .toList();
+
+    final apiService = ref.read(apiServiceProvider);
+
+    final response = await apiService.storeMedicationGroupForDoctor(
+      caseId: widget.caseId,
+      medications: medsData,
+    );
+
+    if (response.statusCode == 201) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم حفظ الأدوية بنجاح')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('فشل حفظ الأدوية: ${response.body}')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,16 +96,12 @@ class _AddTreatmentPlanPageState extends ConsumerState<AddTreatmentPathway> {
               if (medicines.isNotEmpty) ...[
                 const SizedBox(height: 20),
                 buildSectionTitle('الأدوية المضافة', theme),
-                GridView.builder(
+                const SizedBox(height: 10),
+                ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: medicines.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 10.0,
-                    mainAxisSpacing: 10.0,
-                    childAspectRatio: 0.7,
-                  ),
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final med = medicines[index];
                     return MedicationItem(
@@ -84,17 +116,14 @@ class _AddTreatmentPlanPageState extends ConsumerState<AddTreatmentPathway> {
               ],
               const SizedBox(height: 30),
               ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('تم حفظ المسار العلاجي بنجاح')),
-                  );
-                },
+                onPressed: isLoading ? null : _saveMedicationGroup,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.colorScheme.primary,
                   minimumSize: const Size.fromHeight(50),
                 ),
-                child: const Text('حفظ المسار العلاجي'),
+                child: isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('حفظ المسار العلاجي'),
               ),
             ],
           ),

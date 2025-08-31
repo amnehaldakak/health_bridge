@@ -1,43 +1,19 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:health_bridge/constant/color.dart';
-import 'package:health_bridge/service/api_service.dart';
 import 'package:health_bridge/models/patient.dart';
+import 'package:health_bridge/providers/records_doctor_provider.dart';
 
-class RecordsDoctor extends StatefulWidget {
+class RecordsDoctor extends ConsumerWidget {
   const RecordsDoctor({super.key});
 
   @override
-  State<RecordsDoctor> createState() => _RecordsDoctorState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final patientsAsync = ref.watch(doctorPatientsProvider);
+    final patientsController = ref.read(doctorPatientsProvider.notifier);
 
-class _RecordsDoctorState extends State<RecordsDoctor> {
-  late Future<List<PatientModel>> _patientsFuture;
-  final ApiService _apiService = ApiService();
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPatients();
-  }
-
-  void _loadPatients() {
-    setState(() {
-      _patientsFuture = _apiService.getDoctorPatients();
-    });
-  }
-
-  /// دالة السحب للتحديث
-  Future<void> _refreshPatients() async {
-    final patients = await _apiService.getDoctorPatients();
-    setState(() {
-      _patientsFuture = Future.value(patients);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -48,24 +24,11 @@ class _RecordsDoctorState extends State<RecordsDoctor> {
           color: blue5,
         ),
       ),
-      body: FutureBuilder<List<PatientModel>>(
-        future: _patientsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
+      body: patientsAsync.when(
+        data: (patients) {
+          if (patients.isEmpty) {
             return RefreshIndicator(
-              onRefresh: _refreshPatients,
-              child: ListView(
-                children: [
-                  const SizedBox(height: 100),
-                  Center(child: Text("خطأ: ${snapshot.error}")),
-                ],
-              ),
-            );
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return RefreshIndicator(
-              onRefresh: _refreshPatients,
+              onRefresh: patientsController.refreshPatients,
               child: ListView(
                 children: const [
                   SizedBox(height: 100),
@@ -75,18 +38,15 @@ class _RecordsDoctorState extends State<RecordsDoctor> {
             );
           }
 
-          final patients = snapshot.data!;
-
           return RefreshIndicator(
-            onRefresh: _refreshPatients,
+            onRefresh: patientsController.refreshPatients,
             child: ListView.builder(
               itemCount: patients.length,
               itemBuilder: (context, index) {
                 final patient = patients[index];
                 return InkWell(
-                  onTap: () {
-                    context.pushNamed('patient_cases', extra: patient);
-                  },
+                  onTap: () =>
+                      context.pushNamed('patient_cases', extra: patient),
                   borderRadius: BorderRadius.circular(12),
                   child: Card(
                     elevation: 2,
@@ -148,6 +108,16 @@ class _RecordsDoctorState extends State<RecordsDoctor> {
             ),
           );
         },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => RefreshIndicator(
+          onRefresh: patientsController.refreshPatients,
+          child: ListView(
+            children: [
+              const SizedBox(height: 100),
+              Center(child: Text("خطأ: $err")),
+            ],
+          ),
+        ),
       ),
     );
   }

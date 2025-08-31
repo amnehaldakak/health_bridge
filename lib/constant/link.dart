@@ -1,5 +1,5 @@
-const String serverLink = 'http://10.21.218.187:8000/api/';
-const String serverLink2 = 'http://127.0.0.1:8000/';
+const String serverLink = 'http://192.168.39.187:8000/api/';
+const String serverLink2 = 'http://192.168.247.187:8000/';
 
 const String loginLink = 'login';
 const String registerLink = 'register';
@@ -14,3 +14,7 @@ const String storeValueLink = 'store_value';
 const String logoutLink = 'logout';
 const String showValueLink = 'show_value';
 const String deleteValueLink = 'delete_value';
+const String showProfileLink = 'showProfile';
+const String updateProfileLink = 'updateProfile';
+const String destroyProfileLink = 'destroyProfile';
+const String storeMedicationGroupLink = 'storeMedicationGroup';

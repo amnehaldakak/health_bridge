@@ -4,14 +4,18 @@ import 'package:health_bridge/models/user.dart';
 import 'package:health_bridge/service/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// =================== SharedPreferences Provider ===================
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError('يجب تهيئة sharedPreferencesProvider');
+  throw UnimplementedError('SharedPreferences لم يتم تهيئتها بعد');
 });
 
+// =================== ApiService Provider ===================
 final apiServiceProvider = Provider<ApiService>((ref) {
-  return ApiService();
+  final prefs = ref.watch(sharedPreferencesProvider); // ✅ تمرير prefs
+  return ApiService(prefs: prefs);
 });
 
+// =================== AuthController Provider ===================
 final authControllerProvider =
     StateNotifierProvider<AuthController, AuthState>((ref) {
   final apiService = ref.watch(apiServiceProvider);
@@ -19,19 +23,19 @@ final authControllerProvider =
   return AuthController(apiService: apiService, prefs: prefs);
 });
 
-// Provider للوصول إلى بيانات المستخدم الحالي
+// =================== Current User Provider ===================
 final currentUserProvider = Provider<User?>((ref) {
   final authState = ref.watch(authControllerProvider);
   return authState is Authenticated ? authState.user : null;
 });
 
-// Provider للتحقق من حالة المصادقة
+// =================== isLoggedIn Provider ===================
 final isLoggedInProvider = Provider<bool>((ref) {
   final authState = ref.watch(authControllerProvider);
   return authState is Authenticated;
 });
 
-// Provider للحصول على التوكن
+// =================== Token Provider ===================
 final tokenProvider = Provider<String?>((ref) {
   final authState = ref.watch(authControllerProvider);
   return authState is Authenticated ? authState.token : null;

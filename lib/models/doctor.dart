@@ -7,6 +7,11 @@ class DoctorModel {
   final String createdAt;
   final String updatedAt;
 
+  // الحقول الجديدة
+  final String? clinicAddress;
+  final String? clinicPhone;
+  final String? rejectionReason;
+
   DoctorModel({
     required this.id,
     required this.userId,
@@ -15,6 +20,9 @@ class DoctorModel {
     required this.verificationStatus,
     required this.createdAt,
     required this.updatedAt,
+    this.clinicAddress,
+    this.clinicPhone,
+    this.rejectionReason,
   });
 
   factory DoctorModel.fromJson(Map<String, dynamic> json) {
@@ -26,6 +34,11 @@ class DoctorModel {
       verificationStatus: json['verification_status'],
       createdAt: json['created_at'],
       updatedAt: json['updated_at'],
+
+      // الحقول الجديدة
+      clinicAddress: json['clinic_address'],
+      clinicPhone: json['clinic_phone'],
+      rejectionReason: json['rejection_reason'],
     );
   }
 
@@ -38,6 +51,11 @@ class DoctorModel {
       'verification_status': verificationStatus,
       'created_at': createdAt,
       'updated_at': updatedAt,
+
+      // الحقول الجديدة
+      'clinic_address': clinicAddress,
+      'clinic_phone': clinicPhone,
+      'rejection_reason': rejectionReason,
     };
   }
 }

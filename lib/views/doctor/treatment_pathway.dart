@@ -19,7 +19,12 @@ class TreatmentPlan {
 }
 
 class TreatmentPathway extends StatefulWidget {
-  const TreatmentPathway({super.key});
+  final int caseId;
+
+  TreatmentPathway({
+    super.key,
+    required this.caseId,
+  });
 
   @override
   State<TreatmentPathway> createState() => _TreatmentPathwayState();
@@ -189,7 +194,9 @@ class _TreatmentPathwayState extends State<TreatmentPathway> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const AddTreatmentPathway(),
+              builder: (context) => AddTreatmentPathway(
+                caseId: widget.caseId,
+              ),
             ),
           );
         },

@@ -36,10 +36,12 @@ class AuthError extends AuthState {
 // Controller للمصادقة
 class AuthController extends StateNotifier<AuthState> {
   final ApiService apiService;
-  final SharedPreferences prefs;
+  final SharedPreferences prefs; // ✅ استخدم provider هنا
 
-  AuthController({required this.apiService, required this.prefs})
-      : super(Unauthenticated()) {
+  AuthController({
+    required this.apiService,
+    required this.prefs,
+  }) : super(Unauthenticated()) {
     checkAuthStatus();
   }
 
@@ -86,6 +88,10 @@ class AuthController extends StateNotifier<AuthState> {
                 prefs.getString('doctor_verificationStatus');
             final doctorCreatedAt = prefs.getString('doctor_createdAt');
             final doctorUpdatedAt = prefs.getString('doctor_updatedAt');
+            final doctorClinicAddress = prefs.getString('doctor_clinicAddress');
+            final doctorClinicPhone = prefs.getString('doctor_clinicPhone');
+            final doctorRejectionReason =
+                prefs.getString('doctor_rejectionReason');
 
             if (doctorId != null && doctorUserId != null) {
               doctor = DoctorModel(
@@ -96,6 +102,9 @@ class AuthController extends StateNotifier<AuthState> {
                 verificationStatus: doctorVerificationStatus ?? '',
                 createdAt: doctorCreatedAt ?? '',
                 updatedAt: doctorUpdatedAt ?? '',
+                clinicAddress: doctorClinicAddress ?? '',
+                clinicPhone: doctorClinicPhone ?? '',
+                rejectionReason: doctorRejectionReason,
               );
             }
           } else if (userRole == 'patient') {
@@ -131,7 +140,6 @@ class AuthController extends StateNotifier<AuthState> {
             token: token,
           );
         } else {
-          // إذا كانت البيانات غير مكتملة، نمسح كل شيء ونبدأ من جديد
           await _clearAllUserData();
           state = Unauthenticated();
         }
@@ -145,23 +153,17 @@ class AuthController extends StateNotifier<AuthState> {
   // تسجيل الدخول
   Future<void> login(String email, String password) async {
     state = AuthLoading();
-
     try {
       final deviceName = await getDeviceName();
       final loginData = {
         "email": email,
         "password": password,
-        "device_name": "mobile",
+        "device_name": deviceName,
       };
 
       const apiUrl = '$serverLink$loginLink';
-      print("URL: $apiUrl");
-      print("Data: $loginData");
-
       final response = await apiService.postRequest(apiUrl, loginData);
-      print("Response: $response");
 
-      // التحقق من أن response ليس null وأنه من النوع Map
       if (response == null) {
         state = AuthError('لا يوجد استجابة من السيرفر');
         return;
@@ -173,7 +175,6 @@ class AuthController extends StateNotifier<AuthState> {
         return;
       }
 
-      // التحقق من وجود خطأ في الاستجابة
       if (response.containsKey('error')) {
         state = AuthError(response['error'] ?? 'حدث خطأ غير معروف');
         return;
@@ -181,23 +182,16 @@ class AuthController extends StateNotifier<AuthState> {
 
       if (response['token'] != null) {
         final token = response['token'].toString();
+        await prefs.setString('token', token);
 
-        // التحقق من وجود user في الاستجابة
-        if (response['user'] == null) {
-          state = AuthError('بيانات المستخدم غير متوفرة في الاستجابة');
-          return;
-        }
-
-        if (response['user'] is! Map<String, dynamic>) {
-          state = AuthError('بيانات المستخدم غير صحيحة');
+        if (response['user'] == null || response['user'] is! Map<String, dynamic>) {
+          state = AuthError('بيانات المستخدم غير متوفرة أو غير صحيحة');
           return;
         }
 
         final userData = response['user'] as Map<String, dynamic>;
         final user = User.fromJson(userData);
 
-        // حفظ التوكن وبيانات المستخدم
-        await prefs.setString('token', token);
         await prefs.setInt('user_id', user.id ?? 0);
         await prefs.setString('user_name', user.name);
         await prefs.setString('user_email', user.email);
@@ -210,8 +204,7 @@ class AuthController extends StateNotifier<AuthState> {
         DoctorModel? doctor;
         PatientModel? patient;
 
-        // في حالة الطبيب
-        if (user.role == 'doctor') {
+        if (user.role == 'doctor' && response['doctor'] != null) {
           final doctorData = response['doctor'] as Map<String, dynamic>;
           doctor = DoctorModel.fromJson(doctorData);
 
@@ -225,24 +218,21 @@ class AuthController extends StateNotifier<AuthState> {
               'doctor_verificationStatus', doctor.verificationStatus);
           await prefs.setString('doctor_createdAt', doctor.createdAt);
           await prefs.setString('doctor_updatedAt', doctor.updatedAt);
-        }
-
-        // في حالة المريض
-        else if (user.role == 'patient') {
+          await prefs.setString('doctor_clinicAddress', doctor.clinicAddress ?? '');
+          await prefs.setString('doctor_clinicPhone', doctor.clinicPhone ?? '');
+          await prefs.setString('doctor_rejectionReason', doctor.rejectionReason ?? '');
+        } else if (user.role == 'patient' && response['patient'] != null) {
           final patientData = response['patient'] as Map<String, dynamic>;
-          print('patientData $patientData-------------------');
           patient = PatientModel.fromLoginResponse(patientData, userData);
-          print(patient.user.email);
+
           await prefs.setInt('patient_id', patient.id);
           await prefs.setInt('patient_userId', patient.userId);
           await prefs.setString('patient_birthDate', patient.birthDate);
           await prefs.setString('patient_gender', patient.gender);
           await prefs.setString('patient_phone', patient.phone);
-          await prefs.setString(
-              'patient_chronicDiseases', patient.chronicDiseases);
+          await prefs.setString('patient_chronicDiseases', patient.chronicDiseases);
           await prefs.setString('patient_createdAt', patient.createdAt);
           await prefs.setString('patient_updatedAt', patient.updatedAt);
-          print('-------------------------end');
         }
 
         state = Authenticated(
@@ -251,19 +241,13 @@ class AuthController extends StateNotifier<AuthState> {
           patient: patient,
           token: token,
         );
-      } else if (response['is_approved'] != null &&
-          response['is_approved'] == false) {
-        state = AuthError(
-            response['message'] ?? 'في انتظار مراجعة شهادتك من الإدارة');
       } else {
-        final errorMessage = response['message'] ??
-            response['error'] ??
-            'حدث خطأ أثناء تسجيل الدخول';
+        final errorMessage =
+            response['message'] ?? response['error'] ?? 'حدث خطأ أثناء تسجيل الدخول';
         state = AuthError(errorMessage);
       }
     } catch (e) {
       print('تفاصيل الخطأ: $e');
-      print('نوع الخطأ: ${e.runtimeType}');
       state = AuthError("خطأ في الاتصال: ${e.toString()}");
     }
   }
@@ -271,61 +255,17 @@ class AuthController extends StateNotifier<AuthState> {
   // تسجيل الخروج
   Future<void> logout() async {
     try {
-      final token = prefs.getString('token');
-
-      // إذا كان هناك token، نرسل طلب تسجيل الخروج إلى السيرفر
-      if (token != null) {
-        try {
-          final result = await apiService.logout(token);
-          if (result != null &&
-              result is Map<String, dynamic> &&
-              !(result['success'] ?? false)) {
-            print('تحذير: ${result['message']}');
-          }
-        } catch (e) {
-          print('تحذير: فشل إرسال طلب تسجيل الخروج إلى السيرفر: $e');
-        }
-      }
-
-      // مسح جميع البيانات المحفوظة محلياً
       await _clearAllUserData();
-
       state = Unauthenticated();
     } catch (e) {
       print('خطأ أثناء تسجيل الخروج: $e');
-      // حتى إذا فشل طلب السيرفر، نمسح البيانات المحلية
       await _clearAllUserData();
       state = Unauthenticated();
     }
   }
 
-  // دالة مساعدة لمسح جميع البيانات
+  // مسح كل البيانات
   Future<void> _clearAllUserData() async {
-    await prefs.remove('token');
-    await prefs.remove('user_id');
-    await prefs.remove('user_name');
-    await prefs.remove('user_email');
-    await prefs.remove('user_role');
-    await prefs.remove('user_isApproved');
-    await prefs.remove('user_profilePicture');
-    await prefs.remove('user_createdAt');
-    await prefs.remove('user_updatedAt');
-
-    await prefs.remove('doctor_id');
-    await prefs.remove('doctor_userId');
-    await prefs.remove('doctor_specialization');
-    await prefs.remove('doctor_certificatePath');
-    await prefs.remove('doctor_verificationStatus');
-    await prefs.remove('doctor_createdAt');
-    await prefs.remove('doctor_updatedAt');
-
-    await prefs.remove('patient_id');
-    await prefs.remove('patient_userId');
-    await prefs.remove('patient_birthDate');
-    await prefs.remove('patient_gender');
-    await prefs.remove('patient_phone');
-    await prefs.remove('patient_chronicDiseases');
-    await prefs.remove('patient_createdAt');
-    await prefs.remove('patient_updatedAt');
+    await prefs.clear();
   }
 }

@@ -8,12 +8,21 @@ import 'package:health_bridge/models/patient.dart';
 import 'package:health_bridge/models/user.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static Map<String, String> headers = {
-    "Content-Type": "application/json",
-    "Authorization": "Bearer ${prefs.getString('token')}",
-  };
+  final SharedPreferences prefs;
+
+  ApiService({required this.prefs});
+
+  /// الهيدر الديناميكي الذي يتحدث تلقائياً بعد كل تسجيل دخول
+  Map<String, String> get headers {
+    final token = prefs.getString('token') ?? '';
+    return {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token",
+    };
+  }
 
   /// دالة عامة لإرسال POST request
   Future<Map<String, dynamic>> postRequest(
@@ -151,13 +160,15 @@ class ApiService {
   // get the patients of the current doctor
   Future<List<PatientModel>> getDoctorPatients() async {
     print(headers);
+    // headers['Content-Type'] = 'text/plain';
+    // print(headers);
+
     try {
       String url = "$serverLink$getDoctorPatientsLink";
       print('Request URL: $url');
 
       final response = await http.get(Uri.parse(url), headers: headers);
       print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -237,17 +248,17 @@ class ApiService {
     }
   }
 
-  static Future<http.StreamedResponse> casePatient({
+  Future<http.StreamedResponse> casePatient({
     required int patientId,
     required String chiefComplaint,
     required String symptoms,
-    required String medicalHistory,
-    required String surgicalHistory,
-    required String allergicHistory,
-    required String smokingStatus,
-    required String signs,
-    required String vitalSigns,
-    required String clinicalExaminationResults,
+    String? medicalHistory,
+    String? surgicalHistory,
+    String? allergicHistory,
+    String? smokingStatus,
+    String? signs,
+    String? vitalSigns,
+    String? clinicalExaminationResults,
     required String diagnosis,
     File? echo,
     File? labTest,
@@ -260,20 +271,36 @@ class ApiService {
 
       var request = http.MultipartRequest("POST", url);
 
-      // البيانات النصية (بدون doctor_id)
-      request.fields.addAll({
-        "patient_id": patientId.toString(),
-        "chief_complaint": chiefComplaint,
-        "symptoms": symptoms,
-        "medical_history": medicalHistory,
-        "surgical_history": surgicalHistory,
-        "allergic_history": allergicHistory,
-        "smoking_status": smokingStatus,
-        "signs": signs,
-        "vital_signs": vitalSigns,
-        "clinical_examination_results": clinicalExaminationResults,
-        "diagnosis": diagnosis,
-      });
+      // إلزامية
+      request.fields["patient_id"] = patientId.toString();
+      request.fields["chief_complaint"] = chiefComplaint;
+      request.fields["symptoms"] = symptoms;
+      request.fields["diagnosis"] = diagnosis;
+
+      // اختياري + فقط إذا مش null أو مش فاضي
+      if (medicalHistory != null && medicalHistory.trim().isNotEmpty) {
+        request.fields["medical_history"] = medicalHistory;
+      }
+      if (surgicalHistory != null && surgicalHistory.trim().isNotEmpty) {
+        request.fields["surgical_history"] = surgicalHistory;
+      }
+      if (allergicHistory != null && allergicHistory.trim().isNotEmpty) {
+        request.fields["allergic_history"] = allergicHistory;
+      }
+      if (smokingStatus != null && smokingStatus.trim().isNotEmpty) {
+        request.fields["smoking_status"] = smokingStatus;
+      }
+      if (signs != null && signs.trim().isNotEmpty) {
+        request.fields["signs"] = signs;
+      }
+      if (vitalSigns != null && vitalSigns.trim().isNotEmpty) {
+        request.fields["vital_signs"] = vitalSigns;
+      }
+      if (clinicalExaminationResults != null &&
+          clinicalExaminationResults.trim().isNotEmpty) {
+        request.fields["clinical_examination_results"] =
+            clinicalExaminationResults;
+      }
 
       if (kDebugMode) {
         print('📋 Fields: ${request.fields}');
@@ -281,29 +308,28 @@ class ApiService {
 
       // الملفات إذا موجودة
       if (echo != null) {
-        if (kDebugMode) {
-          print('📎 Echo file: ${echo.path}');
-        }
+        final echoBytes = await echo.readAsBytes();
         request.files.add(
-          await http.MultipartFile.fromPath(
+          http.MultipartFile.fromBytes(
             "echo",
-            echo.path,
-          ),
-        );
-      }
-      if (labTest != null) {
-        if (kDebugMode) {
-          print('📎 Lab test file: ${labTest.path}');
-        }
-        request.files.add(
-          await http.MultipartFile.fromPath(
-            "lab_test",
-            labTest.path,
+            echoBytes,
+            filename: echo.path.split('/').last,
           ),
         );
       }
 
-      // استخدام الهدر الجاهز
+      if (labTest != null) {
+        final labTestBytes = await labTest.readAsBytes();
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            "lab_test",
+            labTestBytes,
+            filename: labTest.path.split('/').last,
+          ),
+        );
+      }
+
+      // الهيدر
       request.headers.addAll(headers);
 
       if (kDebugMode) {
@@ -345,7 +371,7 @@ class ApiService {
     }
   }
 
-  static Future<http.StreamedResponse> updateMedicalCase({
+  Future<http.StreamedResponse> updateMedicalCase({
     required int caseId,
     required String chiefComplaint,
     required String symptoms,
@@ -484,12 +510,19 @@ class ApiService {
     }
   }
 
-  Future<dynamic> storeHealthValue(int diseaseId, Map<String, dynamic> data,
-      {String? token}) async {
+  Future<dynamic> storeHealthValue(
+    int diseaseId,
+    Map<String, dynamic> data,
+  ) async {
     try {
+      String url = '$serverLink$storeValueLink/$diseaseId';
+      print(url);
+      print(headers);
+      print(data);
+      print(json.encode(data));
       final response = await http
           .post(
-            Uri.parse('$serverLink$storeValueLink/$diseaseId'),
+            Uri.parse(url),
             headers: headers,
             body: json.encode(data),
           )
@@ -568,5 +601,95 @@ class ApiService {
     }
   }
 
-  deleteRequest(String s, {required String token}) {}
+  // ================== Profile APIs ==================
+
+  /// عرض البروفايل
+  Future<Map<String, dynamic>> getProfile() async {
+    final url = Uri.parse("$serverLink$showProfileLink");
+    try {
+      final response = await http.get(url, headers: headers);
+      print('showProfileLink${response.body}');
+      print(response.statusCode);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception("فشل في جلب البروفايل: ${response.body}");
+      }
+    } catch (e) {
+      throw Exception("خطأ في الاتصال: $e");
+    }
+  }
+
+  /// تحديث البروفايل (داتا + صورة اختيارية)
+  Future<Map<String, dynamic>> updateProfile({
+    String? name,
+    String? email,
+    File? profilePicture,
+    Map<String, String>? extraFields, // بيانات إضافية (مريض/دكتور)
+  }) async {
+    final url = Uri.parse("$serverLink$updateProfileLink");
+
+    var request = http.MultipartRequest("POST", url);
+    request.headers.addAll(headers);
+
+    if (name != null) request.fields['name'] = name;
+    if (email != null) request.fields['email'] = email;
+
+    if (extraFields != null) {
+      request.fields.addAll(extraFields);
+    }
+
+    if (profilePicture != null) {
+      request.files.add(
+        await http.MultipartFile.fromPath(
+            "profile_picture", profilePicture.path),
+      );
+    }
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception("فشل في تحديث البروفايل: ${response.body}");
+    }
+  }
+
+  /// حذف البروفايل
+  Future<Map<String, dynamic>> deleteProfile() async {
+    final url = Uri.parse("$serverLink$destroyProfileLink");
+    try {
+      final response = await http.get(url, headers: headers);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception("فشل في حذف الحساب: ${response.body}");
+      }
+    } catch (e) {
+      throw Exception("خطأ في الاتصال: $e");
+    }
+  }
+
+  // إضافة مجموعة الأدوية للطبيب
+  Future<http.Response> storeMedicationGroupForDoctor({
+    required int caseId,
+    required List<Map<String, dynamic>> medications,
+  }) async {
+    String url = '$serverLink$storeMedicationGroupLink/$caseId';
+    print(url);
+
+    final uri = Uri.parse(url);
+    print(medications);
+    // إرسال البيانات كـ JSON
+    final response = await http.post(
+      uri,
+      headers: headers,
+      body: json.encode({
+        "medications": medications,
+      }),
+    );
+
+    return response;
+  }
 }

@@ -4,7 +4,7 @@ import 'package:health_bridge/models/health_value.dart';
 import 'package:health_bridge/service/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// حالات HealthValue
+// ====================== حالات HealthValue ======================
 abstract class HealthValueState {}
 
 class HealthValueLoading extends HealthValueState {}
@@ -20,7 +20,7 @@ class HealthValueError extends HealthValueState {
   HealthValueError(this.message);
 }
 
-// Controller للـ HealthValue
+// ====================== Controller ======================
 class HealthValueController extends StateNotifier<HealthValueState> {
   final ApiService apiService;
   final SharedPreferences prefs;
@@ -31,15 +31,16 @@ class HealthValueController extends StateNotifier<HealthValueState> {
   HealthValueController({required this.apiService, required this.prefs})
       : super(HealthValueLoading());
 
-  // تحميل القيم الصحية لمرض معين
+  // ------------------ تحميل القيم الصحية لمرض معين ------------------
   Future<void> loadHealthValues(int diseaseId) async {
+    state = HealthValueLoading();
     try {
       final token = prefs.getString('token');
       if (token == null) {
         state = HealthValueError('يجب تسجيل الدخول أولاً');
         return;
       }
-      print(token + "---------------------");
+
       final response = await apiService.showHealthValues(diseaseId);
 
       if (response is List) {
@@ -64,7 +65,7 @@ class HealthValueController extends StateNotifier<HealthValueState> {
     }
   }
 
-  // إضافة قيمة صحية جديدة
+  // ------------------ إضافة قيمة صحية جديدة ------------------
   Future<bool> addHealthValue(int diseaseId, int value,
       {int? valuee, String? status}) async {
     try {
@@ -72,38 +73,42 @@ class HealthValueController extends StateNotifier<HealthValueState> {
       final patientId = prefs.getInt('patient_id');
 
       if (token == null || patientId == null) {
+        state = HealthValueError('يجب تسجيل الدخول أولاً');
         return false;
       }
 
       final data = {
         'value': value,
-        'valuee': valuee,
-        'status': status,
+        if (valuee != null) 'valuee': valuee,
+        if (status != null) 'status': status,
       };
-
-      final response =
-          await apiService.storeHealthValue(diseaseId, data, token: token);
+      print(data);
+      final response = await apiService.storeHealthValue(diseaseId, data);
 
       if (response is Map<String, dynamic> && response['message'] != null) {
         // إعادة تحميل البيانات للمرض فقط بعد الإضافة
         await loadHealthValues(diseaseId);
         return true;
       }
+
+      state = HealthValueError('فشل في إضافة القيمة الصحية');
       return false;
     } catch (e) {
-      print('AddHealthValue error: $e');
+      state = HealthValueError('خطأ عند إضافة القيمة الصحية: $e');
       return false;
     }
   }
 
-  // حذف قيمة صحية
+  // ------------------ حذف قيمة صحية ------------------
   Future<bool> deleteHealthValue(int valueId) async {
     try {
       final token = prefs.getString('token');
-      if (token == null) return false;
+      if (token == null) {
+        state = HealthValueError('يجب تسجيل الدخول أولاً');
+        return false;
+      }
 
       final response = await apiService.deleteHealthValue(valueId);
-      print('Delete response: $response');
 
       if (response is Map<String, dynamic> && response['message'] != null) {
         // إعادة تحميل كل الأمراض بعد الحذف
@@ -112,9 +117,11 @@ class HealthValueController extends StateNotifier<HealthValueState> {
         }
         return true;
       }
+
+      state = HealthValueError('فشل في حذف القيمة الصحية');
       return false;
     } catch (e) {
-      print('DeleteHealthValue error: $e');
+      state = HealthValueError('خطأ عند حذف القيمة الصحية: $e');
       return false;
     }
   }

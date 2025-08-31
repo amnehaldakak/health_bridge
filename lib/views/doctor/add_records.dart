@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:health_bridge/models/patient.dart';
+import 'package:health_bridge/providers/auth_provider.dart';
 import 'package:health_bridge/service/api_service.dart';
+import 'package:health_bridge/views/doctor/add_treatment_pathway.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 
-class AddRecords extends StatefulWidget {
+class AddRecords extends ConsumerStatefulWidget {
   const AddRecords({Key? key}) : super(key: key);
 
   @override
-  State<AddRecords> createState() => _AddRecordsState();
+  ConsumerState<AddRecords> createState() => _AddRecordsState();
 }
 
-class _AddRecordsState extends State<AddRecords> {
+class _AddRecordsState extends ConsumerState<AddRecords> {
   int currentStep = 0;
 
   final _storyKey = GlobalKey<FormState>();
@@ -55,8 +58,10 @@ class _AddRecordsState extends State<AddRecords> {
   }
 
   Future<void> _loadPatients() async {
+    setState(() => loading = true);
     try {
-      final patients = await ApiService().getDoctorPatients();
+      final api = ref.read(apiServiceProvider);
+      final patients = await api.getDoctorPatients();
       setState(() {
         allPatients = patients;
         filteredPatients = patients;
@@ -92,12 +97,13 @@ class _AddRecordsState extends State<AddRecords> {
       return;
     }
 
-    // التحقق من صحة البيانات الأساسية
+    // التحقق من الحقول الإلزامية
     if (controllers["chiefComplaint"]!.text.isEmpty ||
         controllers["symptoms"]!.text.isEmpty ||
-        controllers["signs"]!.text.isEmpty ||
-        controllers["vitals"]!.text.isEmpty ||
-        controllers["examResult"]!.text.isEmpty ||
+        controllers["pastMedical"]!.text.isEmpty ||
+        controllers["pastSurgical"]!.text.isEmpty ||
+        controllers["allergies"]!.text.isEmpty ||
+        controllers["smoking"]!.text.isEmpty ||
         controllers["diagnosis"]!.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("⚠ يرجى تعبئة جميع الحقول الإلزامية")),
@@ -105,7 +111,8 @@ class _AddRecordsState extends State<AddRecords> {
       return;
     }
 
-    // إظهار مؤشر التحميل
+    final api = ref.read(apiServiceProvider);
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -120,8 +127,7 @@ class _AddRecordsState extends State<AddRecords> {
     );
 
     try {
-      // استدعاء API لإرسال البيانات باستخدام ApiService
-      final response = await ApiService.casePatient(
+      final response = await api.casePatient(
         patientId: selectedPatient!.id,
         chiefComplaint: controllers["chiefComplaint"]!.text,
         symptoms: controllers["symptoms"]!.text,
@@ -137,35 +143,34 @@ class _AddRecordsState extends State<AddRecords> {
         labTest: _labTestFile,
       );
 
-      // تحويل StreamedResponse إلى Response عادية لقراءة النتيجة
       final httpResponse = await http.Response.fromStream(response);
       final responseBody = json.decode(httpResponse.body);
-      print(responseBody);
-      print("${response.statusCode}--------------------------------");
+
       if (response.statusCode == 201) {
-        // نجاح إنشاء الحالة
+        final caseId = responseBody['case']['id'];
+        final patientName = selectedPatient!.user.name;
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("✅ تم إرسال بيانات الحالة بنجاح")),
+          const SnackBar(content: Text("✅ تم إنشاء الحالة بنجاح")),
         );
         _resetForm();
         setState(() => currentStep = 0);
-        context.pushReplacementNamed('add_treatment_Pathway');
-      } else if (response.statusCode == 202) {
-        // طلب موافقة مطلوب
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("⏳ ${responseBody['message']}")),
-        );
-      } else if (response.statusCode == 403) {
-        // ممنوع - يحتاج موافقة
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("⏸️ ${responseBody['message']}")),
-        );
+        print('caseId: $caseId');
+
+        // إعادة التوجيه إلى صفحة إضافة مسار علاجي
+        // ignore: use_build_context_synchronously
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => AddTreatmentPathway(
+            caseId: caseId,
+          ),
+        ));
       } else {
-        // أخطاء أخرى
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content:
-                  Text("❌ خطأ: ${responseBody['message'] ?? 'Unknown error'}")),
+            content: Text(
+              "❌ خطأ: ${responseBody['message'] ?? 'Unknown error'}",
+            ),
+          ),
         );
       }
     } catch (e) {
@@ -175,11 +180,8 @@ class _AddRecordsState extends State<AddRecords> {
     }
   }
 
-  // دالة لمسح الحقول
   void _resetForm() {
-    controllers.forEach((key, controller) {
-      controller.clear();
-    });
+    controllers.forEach((key, controller) => controller.clear());
     setState(() {
       _echoFile = null;
       _labTestFile = null;
@@ -190,10 +192,7 @@ class _AddRecordsState extends State<AddRecords> {
     final formKeys = [_storyKey, _examKey, _diagnosisKey];
     final isLast = currentStep == _steps().length - 1;
 
-    if (formKeys[currentStep] != null &&
-        formKeys[currentStep]!.currentState?.validate() != true) {
-      return;
-    }
+    if (formKeys[currentStep]!.currentState?.validate() != true) return;
 
     if (isLast && _diagnosisValidated()) {
       _submit();
@@ -230,7 +229,6 @@ class _AddRecordsState extends State<AddRecords> {
             ? const Center(child: CircularProgressIndicator())
             : Column(
                 children: [
-                  // 🟢 مربع البحث
                   Padding(
                     padding: const EdgeInsets.all(12),
                     child: TextField(
@@ -245,8 +243,6 @@ class _AddRecordsState extends State<AddRecords> {
                       onChanged: _filterPatients,
                     ),
                   ),
-
-                  // 🟢 Dropdown لاختيار المريض
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: DropdownButtonFormField<int>(
@@ -271,7 +267,6 @@ class _AddRecordsState extends State<AddRecords> {
                       },
                     ),
                   ),
-
                   if (selectedPatient != null)
                     Padding(
                       padding: const EdgeInsets.all(8.0),
@@ -281,7 +276,6 @@ class _AddRecordsState extends State<AddRecords> {
                             fontWeight: FontWeight.bold, color: Colors.blue),
                       ),
                     ),
-
                   Expanded(
                     child: Stepper(
                       type: StepperType.vertical,
@@ -310,15 +304,14 @@ class _AddRecordsState extends State<AddRecords> {
               field("الشكاية الرئيسية", controllers["chiefComplaint"]!,
                   maxLines: 2),
               field("الأعراض", controllers["symptoms"]!, maxLines: 2),
-              optionalField("السوابق المرضية", controllers["pastMedical"]!,
+              field("السوابق المرضية", controllers["pastMedical"]!,
                   maxLines: 2),
-              optionalField("السوابق الجراحية", controllers["pastSurgical"]!,
+              field("السوابق الجراحية", controllers["pastSurgical"]!,
                   maxLines: 2),
+              field("التحسس", controllers["allergies"]!, maxLines: 1),
+              field("حالة التدخين", controllers["smoking"]!, maxLines: 1),
               optionalField("السوابق الدوائية", controllers["medications"]!,
                   maxLines: 2),
-              optionalField("التحسس", controllers["allergies"]!, maxLines: 1),
-              optionalField("حالة التدخين", controllers["smoking"]!,
-                  maxLines: 1),
               fileUploadField(
                 "صورة Echo (اختياري)",
                 _echoFile,
@@ -336,10 +329,10 @@ class _AddRecordsState extends State<AddRecords> {
           key: _examKey,
           child: Column(
             children: [
-              field("العلامات", controllers["signs"]!, maxLines: 2),
-              field("العلامات الحيوية", controllers["vitals"]!,
+              optionalField("العلامات", controllers["signs"]!, maxLines: 2),
+              optionalField("العلامات الحيوية", controllers["vitals"]!,
                   hint: "ضغط، حرارة، نبض...", maxLines: 2),
-              field("نتيجة الفحص السريري", controllers["examResult"]!,
+              optionalField("نتيجة الفحص السريري", controllers["examResult"]!,
                   maxLines: 3),
               fileUploadField(
                 "نتيجة فحص المختبر (اختياري)",
