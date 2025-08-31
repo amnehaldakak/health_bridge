@@ -36,4 +36,24 @@ class Doctor extends Model
         return $this->hasMany(DoctorPatientApproval::class);
     }
 
+    public function createdCommunities()
+    {
+        return $this->hasMany(Community::class);//, 'doctor_id'
+    }
+
+    public function communityMemberships()
+    {
+        return $this->hasMany(CommunityMember::class);//, 'member_id'
+    }
+
+    public function communityPosts()
+    {
+        return $this->hasMany(CommunityPost::class);//, 'author_id'
+    }
+
+    public function postComments()
+    {
+        return $this->hasMany(PostComment::class);//, 'commenter_id'
+    }
+
 }

@@ -44,4 +44,19 @@ class Patient extends Model
         return $this->hasMany(HealthyValue::class, 'patient_id');
     }
 
+    public function communityMemberships()
+    {
+        return $this->hasMany(CommunityMember::class);//, 'member_id'
+    }
+
+    public function communityPosts()
+    {
+        return $this->hasMany(CommunityPost::class);//, 'author_id'
+    }
+
+    public function postComments()
+    {
+        return $this->hasMany(PostComment::class);//, 'commenter_id'
+    }
+
 }
