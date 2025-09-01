@@ -16,11 +16,11 @@ class DoctorPatientApprovalsTableSeeder extends Seeder
         // إنشاء موافقات عشوائية
         for ($i = 1; $i <= 10; $i++) {
             for ($j = 1; $j <= 10; $j++) {
-                if (rand(0, 1)) { // 50% احتمال إنشاء موافقة
+                if (rand(0, 1)) {   
                     DB::table('doctor_patient_approvals')->insert([
                         'doctor_id' => $i,
                         'patient_id' => $j,
-                        'status' => rand(0, 2) ? 'approved' : 'pending', // 66% approved, 33% pending
+                        'status' => 'approved',
                         'created_at' => now(),
                         'updated_at' => now()
                     ]);

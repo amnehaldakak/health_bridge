@@ -21,12 +21,12 @@ class DoctorsTableSeeder extends Seeder
         // إنشاء بيانات الأطباء
         for ($i = 1; $i <= 10; $i++) {
             DB::table('doctors')->insert([
-                'user_id' => $i + 1, // لأن المستخدم الأول هو الأدمن
+                'user_id' => $i + 1, 
                 'specialization' => $specializations[$i - 1],
                 'clinic_address' => 'عنوان العيادة ' . $i,
                 'clinic_phone' => '091234567' . $i,
                 'certificate_path' => 'certificates/doctor'.$i.'.pdf',
-                'verification_status' => 'approved', // تم التحقق منهم
+                'verification_status' => 'approved', 
                 'created_at' => now(),
                 'updated_at' => now()
             ]);

@@ -24,7 +24,11 @@ class DatabaseSeeder extends Seeder
             DoctorsTableSeeder::class,
             PatientsTableSeeder::class,
             DoctorPatientApprovalsTableSeeder::class,
-            // يمكنك إضافة المزيد من السيدات هنا
+            MedicalCasesTableSeeder::class,
+            MedicationGroupsTableSeeder::class,
+            MedicationsTableSeeder::class,
+            ReminderTimesTableSeeder::class,
+
         ]);
     }
 }

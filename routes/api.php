@@ -12,6 +12,7 @@ use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\PatientMedicationController;
 use App\Http\Controllers\HealthyValueController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\AIController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -96,5 +97,11 @@ Route::controller(ProfileController::class)->group(function () {
     Route::get('showProfile','show')->middleware('auth:sanctum');
     Route::Post('updateProfile','update')->middleware('auth:sanctum');
     Route::get('destroyProfile','destroy')->middleware('auth:sanctum');
+    
+});
+
+Route::controller(AIController::class)->group(function () {
+
+    Route::get('getPatientData','getPatientData')->middleware('auth:sanctum');
     
 });
