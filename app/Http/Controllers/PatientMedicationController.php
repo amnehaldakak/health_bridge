@@ -58,7 +58,9 @@ class PatientMedicationController extends Controller
     // عرض أدوية المريض
     public function index()
     {
-        $patientId = Auth::id();
+        $userId = Auth::id();
+        $patient = Patient::where('user_id', $userId)->first();
+        $patientId=$patient->id;
         
         $medications = Medication::whereHas('medicationGroup', function($query) use ($patientId) {
             $query->where('patient_id', $patientId);

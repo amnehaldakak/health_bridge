@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use App\Models\DoctorPatientApproval;
 use App\Models\Patient;
+use App\Models\Doctor;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
@@ -50,5 +51,45 @@ class ApprovalController extends Controller
             ->get();
 
         return response()->json($approvals);
+    }
+
+    public function requestsForPatients()
+    {
+        $userId = Auth::id();
+        $doctor = Doctor::where('user_id', $userId)->first();
+        
+        $approvals = DoctorPatientApproval::with('patient.user')
+            ->where('doctor_id', $doctor->id)
+            ->get();
+            //->where('status', 'pending')
+
+        return response()->json($approvals);
+    }
+
+    public function request($patient_name)
+    {
+        $userId = Auth::id();
+        $doctor = Doctor::where('user_id', $userId)->first();
+
+        $patient = Patient::with('user')
+        ->whereHas('user', function($query) use ($patient_name) {
+            $query->where('name', 'like', '%' . $patient_name . '%');
+        })
+        ->first();
+
+    if (!$patient) {
+        return response()->json(['message' => 'لم يتم العثور على المريض: ' . $patient_name], 404);
+    }
+
+        DoctorPatientApproval::create([
+                'doctor_id' => $doctor->id,
+                'patient_id' => $patient->id,
+                'status' => 'pending'
+            ]);
+
+            return response()->json([
+                'message' => 'تم إرسال طلب موافقة للمريض',
+                'requires_approval' => true
+            ], 202);
     }
 }

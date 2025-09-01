@@ -18,6 +18,7 @@ class MedicationGroupController extends Controller
             'medications.*.dosage' => 'required|string',
             'medications.*.frequency' => 'required|integer|min:1',
             'medications.*.duration' => 'required|integer|min:1',
+            'description' => 'nullable|string',
         ]);
 
 
@@ -31,6 +32,7 @@ class MedicationGroupController extends Controller
             'patient_id' => $medicalCase->patient_id,
             'doctor_id' => $doctor->id,
             'prescription_date' => now(),
+            'description' => $request->description,
         ]);
 
         if (!$medicationGroup->id) {
@@ -66,7 +68,7 @@ class MedicationGroupController extends Controller
                 'patient',
                 'doctor'
             ])
-            ->where('group_id', $id)
+            ->where('case_id', $id)
             ->firstOrFail();
 
         return response()->json([

@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('patient_id')->references('id')->on('patients');
             $table->foreignId('doctor_id')->nullable()->references('id')->on('doctors');
             $table->date('prescription_date');
+            $table->string('description')->nullable();
             $table->timestamps();
         });
     }

@@ -12,7 +12,8 @@ class MedicationGroup extends Model
         'case_id',
         'patient_id',
         'doctor_id',
-        'prescription_date'
+        'prescription_date',
+        'description'
         ];
 
     public function patient()

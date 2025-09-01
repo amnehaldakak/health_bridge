@@ -67,6 +67,9 @@ class MedicalCaseController extends Controller
             ], 403);
         }
 
+        $echoPath = null;
+        $labTestPath = null;
+
         if ($request->hasFile('echo')) {
             $echoPath = $request->file('echo')->store('echo_files', 'public');
         }

@@ -52,6 +52,8 @@ Route::controller(ApprovalController::class)->group(function () {
     Route::get('pendingApprovals','pendingApprovals')->middleware('auth:sanctum');
     Route::Post('approve/{id}','approve')->middleware('auth:sanctum');
     Route::Post('reject/{id}','reject')->middleware('auth:sanctum');
+    Route::get('requestsForPatients','requestsForPatients')->middleware('auth:sanctum');
+    Route::get('request/{id}','request')->middleware('auth:sanctum');
 });
 
 Route::controller(MedicationGroupController::class)->group(function () {
