@@ -13,6 +13,10 @@ use App\Http\Controllers\PatientMedicationController;
 use App\Http\Controllers\HealthyValueController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AIController;
+use App\Http\Controllers\CommunityController;
+use App\Http\Controllers\CommunityMemberController;
+use App\Http\Controllers\CommunityPostController;
+use App\Http\Controllers\PostCommentController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -105,3 +109,35 @@ Route::controller(AIController::class)->group(function () {
     Route::get('getPatientData','getPatientData')->middleware('auth:sanctum');
     
 });
+
+Route::controller(CommunityController::class)->group(function () {
+
+    Route::Post('createCommunity','createCommunity')->middleware('auth:sanctum');
+    Route::Post('updateCommunity/{id}','updateCommunity')->middleware('auth:sanctum');
+    Route::get('joinCommunity/{id}','joinCommunity')->middleware('auth:sanctum');
+    Route::get('getAllCommunities','getAllCommunities')->middleware('auth:sanctum');
+    Route::get('getPublicCommunities','getPublicCommunities')->middleware('auth:sanctum');
+    
+});
+
+Route::controller(CommunityMemberController::class)->group(function () {
+
+    Route::get('joinCommunity/{id}','joinCommunity')->middleware('auth:sanctum');
+    
+});
+
+Route::controller(CommunityPostController::class)->group(function () {
+
+    Route::Post('addPost/{id}','addPost')->middleware('auth:sanctum');
+    Route::get('getCommunityDetails/{id}','getCommunityDetails');
+    Route::Post('shareMedicalCase/{id}/{idd}','shareMedicalCase')->middleware('auth:sanctum');
+    
+});
+
+Route::controller(PostCommentController::class)->group(function () {
+
+    Route::Post('addComment/{id}','addComment')->middleware('auth:sanctum');
+    Route::get('getPostWithComments/{id}','getPostWithComments');
+    
+});
+

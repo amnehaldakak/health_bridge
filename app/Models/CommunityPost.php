@@ -24,12 +24,12 @@ class CommunityPost extends Model
         return $this->belongsTo(Community::class);
     }
 
-    public function doctorAuthor()
+    public function doctor()
     {
         return $this->belongsTo(Doctor::class);
     }
 
-    public function patientAuthor()
+    public function patient()
     {
         return $this->belongsTo(Patient::class);
     }
@@ -41,6 +41,6 @@ class CommunityPost extends Model
 
     public function comments()
     {
-        return $this->hasMany(PostComment::class);
+        return $this->hasMany(PostComment::class, 'post_id');
     }
 }

@@ -15,7 +15,8 @@ class Community extends Model
         'type',
         'specialization',
         'doctor_id',
-        'is_private'
+        'is_private',
+        'image'
     ];
 
     public function doctor()

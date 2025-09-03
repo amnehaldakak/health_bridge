@@ -18,15 +18,15 @@ class PostComment extends Model
 
     public function post()
     {
-        return $this->belongsTo(CommunityPost::class);
+        return $this->belongsTo(CommunityPost::class, 'post_id');
     }
 
-    public function doctorCommenter()
+    public function doctor()
     {
         return $this->belongsTo(Doctor::class);
     }
 
-    public function patientCommenter()
+    public function patient()
     {
         return $this->belongsTo(Patient::class);
     }

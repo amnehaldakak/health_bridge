@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('specialization')->nullable();
             $table->foreignId('doctor_id')->references('id')->on('doctors')->cascadeOnDelete();
             $table->boolean('is_private')->default(false);
+            $table->text('image')->nullable();
             $table->timestamps();
             
         });
