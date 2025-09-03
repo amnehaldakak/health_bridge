@@ -1,13 +1,14 @@
-import 'dart:convert';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:health_bridge/config/content/buildMedicationItem.dart';
 import 'package:health_bridge/config/content/build_section_title.dart';
-import 'package:health_bridge/providers/auth_provider.dart';
-import 'package:health_bridge/views/add_medicine.dart';
-import 'package:health_bridge/providers/medicine_add_provider.dart';
 import 'package:health_bridge/models/medication_time.dart';
-import 'dart:ui' as ui;
+import 'package:health_bridge/providers/auth_provider.dart';
+import 'package:health_bridge/providers/medicine_add_provider.dart';
+import 'package:health_bridge/views/add_medicine.dart';
+import 'package:health_bridge/service/api_service.dart';
 
 class AddTreatmentPathway extends ConsumerStatefulWidget {
   final int caseId;
@@ -15,48 +16,94 @@ class AddTreatmentPathway extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<AddTreatmentPathway> createState() =>
-      _AddTreatmentPlanPageState();
+      _AddTreatmentPathwayState();
 }
 
-class _AddTreatmentPlanPageState extends ConsumerState<AddTreatmentPathway> {
+class _AddTreatmentPathwayState extends ConsumerState<AddTreatmentPathway> {
   final TextEditingController treatmentNameController = TextEditingController();
-
   bool isLoading = false;
 
+  @override
+  void initState() {
+    super.initState();
+    // مزامنة الحقل النصي مع الوصف في الـ Provider عند الكتابة
+    treatmentNameController.addListener(() {
+      ref
+          .read(treatmentPlanProvider.notifier)
+          .setDescription(treatmentNameController.text);
+    });
+  }
+
+  @override
+  void dispose() {
+    treatmentNameController.dispose();
+    super.dispose();
+  }
+
   void _saveMedicationGroup() async {
-    final medicines = ref.read(medicineListProvider);
+    final state = ref.read(treatmentPlanProvider);
 
-    // تحويل قائمة MedicationTime إلى List<Map>
-    final medsData = medicines
-        .map((med) => {
-              "name": med.medicationName,
-              "dosage": med.amount,
-              "frequency": med.timePerDay,
-              "duration": med.durationDays,
-            })
-        .toList();
-
-    final apiService = ref.read(apiServiceProvider);
-
-    final response = await apiService.storeMedicationGroupForDoctor(
-      caseId: widget.caseId,
-      medications: medsData,
-    );
-
-    if (response.statusCode == 201) {
+    if (state.description.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم حفظ الأدوية بنجاح')),
+        const SnackBar(content: Text('يرجى إدخال وصف الخطة العلاجية')),
       );
-    } else {
+      return;
+    }
+
+    if (state.medicines.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('فشل حفظ الأدوية: ${response.body}')),
+        const SnackBar(content: Text('لم يتم إضافة أي دواء')),
       );
+      return;
+    }
+
+    setState(() => isLoading = true);
+    try {
+      final apiService = ref.read(apiServiceProvider);
+
+      // تحويل الأدوية إلى List<Map>
+      final medsData = state.medicines
+          .map((med) => {
+                "name": med.name,
+                "dosage": med.dosage,
+                "frequency": med.frequency,
+                "duration": med.duration,
+              })
+          .toList();
+
+      final response = await apiService.storeMedicationGroupForDoctor(
+        caseId: widget.caseId,
+        medications: medsData,
+        description: state.description,
+      );
+
+      if (response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم حفظ الأدوية بنجاح')),
+        );
+
+        // ✅ تفريغ قائمة الأدوية والوصف بعد الحفظ
+        ref.read(treatmentPlanProvider.notifier).clear();
+        treatmentNameController.clear();
+
+        context.pop(); // الرجوع للصفحة السابقة
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('فشل حفظ الأدوية: ${response.body}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('حدث خطأ: $e')),
+      );
+    } finally {
+      setState(() => isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final medicines = ref.watch(medicineListProvider);
+    final treatmentPlan = ref.watch(treatmentPlanProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -71,13 +118,13 @@ class _AddTreatmentPlanPageState extends ConsumerState<AddTreatmentPathway> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              buildSectionTitle('اسم الخطة العلاجية', theme),
+              buildSectionTitle('وصف الخطة العلاجية', theme),
               const SizedBox(height: 20),
               TextField(
                 controller: treatmentNameController,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
-                  hintText: 'أدخل اسم الخطة العلاجية',
+                  hintText: 'أدخل وصف الخطة العلاجية',
                 ),
               ),
               const SizedBox(height: 10),
@@ -93,25 +140,27 @@ class _AddTreatmentPlanPageState extends ConsumerState<AddTreatmentPathway> {
                 icon: const Icon(Icons.add),
                 label: const Text('إضافة دواء'),
               ),
-              if (medicines.isNotEmpty) ...[
-                const SizedBox(height: 20),
+              const SizedBox(height: 20),
+              if (treatmentPlan.medicines.isNotEmpty) ...[
                 buildSectionTitle('الأدوية المضافة', theme),
                 const SizedBox(height: 10),
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: medicines.length,
+                  itemCount: treatmentPlan.medicines.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
-                    final med = medicines[index];
+                    final med = treatmentPlan.medicines[index];
                     return MedicationItem(
                       medication: med,
                       theme: theme,
+                      onEdit: () {
+                        // يمكن إضافة تعديل الدواء إذا رغبتِ
+                      },
                     );
                   },
                 ),
               ] else ...[
-                const SizedBox(height: 20),
                 const Text('لم يتم إضافة أي دواء بعد'),
               ],
               const SizedBox(height: 30),

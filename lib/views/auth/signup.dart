@@ -139,6 +139,7 @@ class _SignUpPageState extends State<SignUpPage> {
       password: _passwordCtrl.text,
       passwordConfirmation: _confirmCtrl.text,
       profileImage: _profileImage,
+      role: _selectedRole ?? '',
     );
 
     try {

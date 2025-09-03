@@ -4,7 +4,7 @@ import 'package:health_bridge/models/medication_time.dart';
 class MedicationItem extends StatelessWidget {
   final MedicationTime medication;
   final ThemeData theme;
-  final VoidCallback? onEdit;
+  final VoidCallback? onEdit; // إذا المستخدم طبيب، سيتم تمرير callback
 
   const MedicationItem({
     Key? key,
@@ -38,15 +38,18 @@ class MedicationItem extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // زر التعديل يظهر فقط إذا onEdit موجود (أي المستخدم طبيب)
             Align(
               alignment: Alignment.topLeft,
-              child: IconButton(
-                icon: const Icon(Icons.edit, size: 18),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                color: theme.colorScheme.primary,
-                onPressed: onEdit,
-              ),
+              child: onEdit != null
+                  ? IconButton(
+                      icon: const Icon(Icons.edit, size: 18),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      color: theme.colorScheme.primary,
+                      onPressed: onEdit,
+                    )
+                  : const SizedBox.shrink(),
             ),
             Center(
               child: Icon(
@@ -58,7 +61,7 @@ class MedicationItem extends StatelessWidget {
             const SizedBox(height: 6.0),
             Center(
               child: Text(
-                medication.medicationName,
+                medication.name,
                 style: theme.textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
@@ -71,13 +74,13 @@ class MedicationItem extends StatelessWidget {
             const SizedBox(height: 8.0),
             Divider(height: 1, thickness: 1, color: Colors.grey[400]),
             const SizedBox(height: 6.0),
-            _buildInfoRow('الجرعة:', medication.amount, theme),
+            _buildInfoRow('الجرعة:', medication.dosage, theme),
             const SizedBox(height: 6.0),
             Divider(height: 1, thickness: 1, color: Colors.grey[400]),
             const SizedBox(height: 6.0),
             Center(
               child: Text(
-                '${medication.timePerDay} مرات يومياً',
+                '${medication.frequency} مرات يومياً',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.primary,
                   fontSize: 14,

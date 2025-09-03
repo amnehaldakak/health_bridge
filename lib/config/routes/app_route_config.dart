@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:health_bridge/models/case.dart';
+import 'package:health_bridge/models/medication_time.dart';
 import 'package:health_bridge/models/patient.dart';
 import 'package:health_bridge/models/user.dart';
 import 'package:health_bridge/views/add_medicine.dart';
@@ -20,6 +21,7 @@ import 'package:health_bridge/views/patient/home_patient.dart';
 import 'package:health_bridge/views/patient/chat_bot_patient.dart';
 import 'package:health_bridge/views/patient/community_patient.dart';
 import 'package:health_bridge/views/patient/medicine.dart';
+import 'package:health_bridge/views/patient/medicine_details.dart';
 import 'package:health_bridge/views/patient/patient.dart';
 import 'package:health_bridge/views/patient/records_patient.dart';
 import 'package:health_bridge/views/patient/addbloodpre.dart';
@@ -158,6 +160,18 @@ final GoRouter appRouter = GoRouter(
       path: '/profile_page',
       name: 'profile_page',
       pageBuilder: (context, state) => MaterialPage(child: ProfilePage()),
+    ),
+
+    GoRoute(
+      path: '/medicine-details',
+      name: 'medicine_details',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>;
+        return MedicineDetails(
+          medication: extra['medication'],
+          selectedDate: extra['selectedDate'],
+        );
+      },
     ),
   ],
   debugLogDiagnostics: true,

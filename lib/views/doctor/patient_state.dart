@@ -8,6 +8,7 @@ import 'package:health_bridge/my_flutter_app_icons.dart';
 import 'package:health_bridge/providers/patient_state_provider.dart';
 import 'package:intl/intl.dart' as ui;
 import 'treatment_pathway.dart';
+import 'package:health_bridge/providers/auth_provider.dart';
 
 class PatientState extends ConsumerStatefulWidget {
   final Case patientCase;
@@ -119,6 +120,7 @@ class _PatientStateState extends ConsumerState<PatientState> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final String role = ref.watch(currentUserProvider)!.role;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -127,10 +129,11 @@ class _PatientStateState extends ConsumerState<PatientState> {
           title: const Text('تفاصيل الحالة'),
           centerTitle: true,
           actions: [
-            IconButton(
-              onPressed: _toggleEditMode,
-              icon: Icon(_isEditing ? Icons.save : Icons.edit),
-            ),
+            if (role == "doctor") // زر التعديل يظهر فقط للطبيب
+              IconButton(
+                onPressed: _toggleEditMode,
+                icon: Icon(_isEditing ? Icons.save : Icons.edit),
+              ),
           ],
         ),
         body: SingleChildScrollView(

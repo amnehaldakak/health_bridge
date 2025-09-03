@@ -4,7 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:health_bridge/constant/link.dart';
 import 'package:health_bridge/main.dart';
 import 'package:health_bridge/models/case.dart';
+import 'package:health_bridge/models/medication_group.dart';
+import 'package:health_bridge/models/medication_time.dart';
 import 'package:health_bridge/models/patient.dart';
+import 'package:health_bridge/models/reminder_time.dart';
 import 'package:health_bridge/models/user.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart';
@@ -672,10 +675,10 @@ class ApiService {
   }
 
   // إضافة مجموعة الأدوية للطبيب
-  Future<http.Response> storeMedicationGroupForDoctor({
-    required int caseId,
-    required List<Map<String, dynamic>> medications,
-  }) async {
+  Future<http.Response> storeMedicationGroupForDoctor(
+      {required int caseId,
+      required List<Map<String, dynamic>> medications,
+      String? description}) async {
     String url = '$serverLink$storeMedicationGroupLink/$caseId';
     print(url);
 
@@ -685,11 +688,108 @@ class ApiService {
     final response = await http.post(
       uri,
       headers: headers,
-      body: json.encode({
-        "medications": medications,
-      }),
+      body:
+          json.encode({"medications": medications, 'description': description}),
     );
 
     return response;
+  }
+
+  Future<List<MedicationTime>> getMedicine() async {
+    try {
+      String url = "$serverLink$getMedicineLink";
+      final response = await http.get(Uri.parse(url), headers: headers);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (data["data"] != null) {
+          List<dynamic> medJson = data["data"];
+          print(medJson);
+
+          return medJson.map((m) {
+            return MedicationTime.fromJson(m);
+          }).toList();
+        } else {
+          throw Exception("No medication data found");
+        }
+      } else {
+        throw Exception("Server error: ${response.statusCode}");
+      }
+    } catch (e) {
+      print('Exception in getMedicine: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateReminderStatus(int reminderId, int status) async {
+    print('reminderId api $reminderId');
+
+    final response = await http.post(
+      Uri.parse('$serverLink$updateStatusLink/$reminderId'),
+      headers: headers,
+      body: json.encode({'status': status}),
+    );
+
+    print('Response code: ${response.statusCode}');
+    print('Response body: ${response.body}');
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update reminder status');
+    }
+
+    // لا حاجة للتحقق من 'success'، يكفي التحقق من statusCode
+    // إذا أحببت، يمكنك التحقق من message للعرض في UI
+    final responseData = json.decode(response.body);
+    print('Message from API: ${responseData['message']}');
+  }
+
+  Future<List<ReminderTime>> fetchReminderTimes(int medicationId) async {
+    final response = await http.get(
+      Uri.parse('$serverLink$medicationReminderTimesLink/$medicationId'),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      print('Response data: $data');
+
+      // التحقق من بنية البيانات
+      if (data is Map &&
+          data.containsKey('success') &&
+          data['success'] == true) {
+        final dataMap = data['data'] as Map<String, dynamic>?;
+
+        if (dataMap != null && dataMap.containsKey('reminder_times')) {
+          List<dynamic> remindersJson = dataMap['reminder_times'];
+          print(
+              'تم العثور على ${remindersJson.length} reminder(s) للدواء $medicationId');
+          return remindersJson
+              .map((json) => ReminderTime.fromJson(json))
+              .toList();
+        } else {
+          throw Exception('لا توجد reminder_times في البيانات');
+        }
+      } else {
+        throw Exception('الطلب لم يكن ناجحاً');
+      }
+    } else {
+      throw Exception(
+          'فشل في جلب بيانات ReminderTimes - Status: ${response.statusCode}');
+    }
+  }
+
+  /// جلب المسار العلاجي (MedicationGroup) حسب caseId
+  Future<MedicationGroup> fetchMedicationGroup(int caseId) async {
+    final url = Uri.parse("$serverLink$showMedicationGroupeLink/$caseId");
+    final response = await http.get(url, headers: headers);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      print(data);
+      return MedicationGroup.fromJson(data['medicationGroup']);
+    } else {
+      throw Exception(
+          "Failed to load medication group: ${response.statusCode}");
+    }
   }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:health_bridge/config/content/language_bottom_sheet.dart';
+import 'package:health_bridge/local/app_localizations.dart';
 import 'package:health_bridge/providers/auth_provider.dart';
 import 'package:health_bridge/my_flutter_app_icons.dart';
 import 'package:health_bridge/views/patient/chat_bot_patient.dart';
@@ -19,14 +21,6 @@ class Patient1 extends ConsumerStatefulWidget {
 class _PatientState extends ConsumerState<Patient1> {
   int _currentIndex = 0;
 
-  final List<String> _nameWidget = [
-    'الرئيسية',
-    'السجلات الصحية',
-    'الأدوية',
-    'المجتمع',
-    'المساعد الذكي'
-  ];
-
   final List<Widget> _children = [
     HomePatient(),
     RecordsPatient(),
@@ -35,16 +29,35 @@ class _PatientState extends ConsumerState<Patient1> {
     ChatBotPatient(),
   ];
 
+  // الحصول على أسماء الـ widgets بناءً على اللغة الحالية
+  List<String> _getWidgetNames(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+    return [
+      loc!.get('home'),
+      loc.get('health_records'),
+      loc.get('medicines'),
+      loc.get('community'),
+      loc.get('smart_assistant'),
+    ];
+  }
+
+  // دالة مساعدة للحصول على الحرف الأول من الاسم بشكل آمن
+  String _getInitials(String? name) {
+    if (name == null || name.isEmpty) return "?";
+    return name[0].toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // الحصول على بيانات المستخدم من الـ Provider
     final currentUser = ref.watch(currentUserProvider);
+    final widgetNames = _getWidgetNames(context);
+    final loc = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _nameWidget[_currentIndex],
+          widgetNames[_currentIndex],
           style: theme.appBarTheme.titleTextStyle,
         ),
         centerTitle: true,
@@ -53,51 +66,64 @@ class _PatientState extends ConsumerState<Patient1> {
       drawer: Drawer(
         child: Column(
           children: [
-            UserAccountsDrawerHeader(
-              accountName: Text(currentUser?.name ?? 'مستخدم غير معروف'),
-              accountEmail: Text(currentUser?.email ?? "لا يوجد بريد إلكتروني"),
-              currentAccountPicture: CircleAvatar(
-                backgroundColor: Colors.white,
-                backgroundImage: (currentUser?.profilePicture != null &&
-                        currentUser!.profilePicture!.isNotEmpty) // ✅ null safe
-                    ? NetworkImage(
-                        currentUser!.profilePicture!) // ✅ forced non-null
-                    : null,
-                child: (currentUser?.profilePicture == null ||
-                        currentUser!.profilePicture!.isEmpty)
-                    ? Text(
-                        (currentUser?.name?.isNotEmpty ==
-                                true) // ✅ check safely
-                            ? currentUser!.name![0]
-                                .toUpperCase() // ✅ safe access
-                            : "?",
-                        style:
-                            const TextStyle(fontSize: 30, color: Colors.black),
-                      )
-                    : null,
+            InkWell(
+              onTap: () => context.pushNamed('profile_page'),
+              child: UserAccountsDrawerHeader(
+                accountName:
+                    Text(currentUser?.name ?? loc!.get('unknown_user')),
+                accountEmail: Text(currentUser?.email ?? loc!.get('no_email')),
+                currentAccountPicture: CircleAvatar(
+                  backgroundColor: Colors.white,
+                  backgroundImage: (currentUser?.profilePicture != null &&
+                          currentUser!.profilePicture!.isNotEmpty)
+                      ? NetworkImage(currentUser.profilePicture!)
+                      : null,
+                  child: (currentUser?.profilePicture == null ||
+                          currentUser?.profilePicture?.isEmpty == true)
+                      ? Text(
+                          _getInitials(currentUser?.name),
+                          style: const TextStyle(
+                              fontSize: 30, color: Colors.black),
+                        )
+                      : null,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.primaryColor,
+                ),
               ),
-              decoration: BoxDecoration(
-                color: theme.primaryColor,
-              ),
+            ),
+            // زر تغيير اللغة
+            ListTile(
+              leading: const Icon(Icons.language, color: Colors.blue),
+              title: Text(loc!.get('change_language')),
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(20)),
+                  ),
+                  builder: (context) => const LanguageBottomSheet(),
+                );
+              },
             ),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text("تسجيل الخروج"),
+              title: Text(loc.get('logout')),
               onTap: () async {
                 final bool? confirm = await showDialog(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: const Text('تسجيل الخروج'),
-                    content:
-                        const Text('هل أنت متأكد من أنك تريد تسجيل الخروج؟'),
+                    title: Text(loc.get('logout')),
+                    content: Text(loc.get('logout_confirmation')),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context, false),
-                        child: const Text('إلغاء'),
+                        child: Text(loc.get('cancel')),
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(context, true),
-                        child: const Text('تأكيد'),
+                        child: Text(loc.get('confirm')),
                       ),
                     ],
                   ),
@@ -143,23 +169,23 @@ class _PatientState extends ConsumerState<Patient1> {
         items: [
           BottomNavigationBarItem(
             icon: Icon(MyFlutterApp.home, size: 30),
-            label: 'الرئيسية',
+            label: loc!.get('home'),
           ),
           BottomNavigationBarItem(
             icon: Icon(MyFlutterApp.noun_records_7876298, size: 30),
-            label: 'السجلات',
+            label: loc.get('records'),
           ),
           BottomNavigationBarItem(
             icon: Icon(MyFlutterApp.noun_medicine_7944091, size: 30),
-            label: 'الأدوية',
+            label: loc.get('medicines'),
           ),
           BottomNavigationBarItem(
             icon: Icon(MyFlutterApp.noun_public_health_7933246, size: 30),
-            label: 'المجتمع',
+            label: loc.get('community'),
           ),
           BottomNavigationBarItem(
             icon: Icon(MyFlutterApp.chatempty, size: 30),
-            label: 'المساعد',
+            label: loc.get('smart_assistant'),
           ),
         ],
       ),

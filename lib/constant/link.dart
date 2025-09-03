@@ -1,4 +1,4 @@
-const String serverLink = 'http://192.168.39.187:8000/api/';
+const String serverLink = 'http://10.196.83.187:8000/api/';
 const String serverLink2 = 'http://192.168.247.187:8000/';
 
 const String loginLink = 'login';
@@ -18,3 +18,7 @@ const String showProfileLink = 'showProfile';
 const String updateProfileLink = 'updateProfile';
 const String destroyProfileLink = 'destroyProfile';
 const String storeMedicationGroupLink = 'storeMedicationGroup';
+const String getMedicineLink = 'index';
+const String updateStatusLink = 'updateStatus';
+const String medicationReminderTimesLink = 'medicationReminderTimes';
+const String showMedicationGroupeLink = 'showMedicationGroup';

@@ -27,19 +27,28 @@ class PatientModel {
   });
 
   factory PatientModel.fromJson(Map<String, dynamic> json) {
+    // أول شي نجيب بيانات اليوزر
+    final userJson = json['user'] ?? {};
+
+    // نبني الـ User مع role افتراضي "patient"
+    final user = User.fromJson({
+      ...userJson,
+      'role': userJson['role'] ?? 'patient',
+    });
+
     return PatientModel(
       id: (json['id'] ?? 0) as int,
       userId: (json['user_id'] ?? 0) as int,
-      birthDate: (json['birth_date']?.toString() ?? '') as String,
-      gender: (json['gender']?.toString() ?? '') as String,
-      phone: (json['phone']?.toString() ?? '') as String,
-      chronicDiseases: (json['chronic_diseases']?.toString() ?? '') as String,
-      createdAt: (json['created_at']?.toString() ?? '') as String,
-      updatedAt: (json['updated_at']?.toString() ?? '') as String,
+      birthDate: (json['birth_date']?.toString() ?? ''),
+      gender: (json['gender']?.toString() ?? ''),
+      phone: (json['phone']?.toString() ?? ''),
+      chronicDiseases: (json['chronic_diseases']?.toString() ?? ''),
+      createdAt: (json['created_at']?.toString() ?? ''),
+      updatedAt: (json['updated_at']?.toString() ?? ''),
       casesCount: json['cases_count'] != null
           ? int.tryParse(json['cases_count'].toString())
           : null,
-      user: User.fromJson(json['user'] ?? {}), // ✅ افصل بيانات user
+      user: user,
     );
   }
 
@@ -73,7 +82,7 @@ class PatientModel {
       id: prefs.getInt('user_id'),
       name: prefs.getString('user_name') ?? '',
       email: prefs.getString('user_email') ?? '',
-      role: prefs.getString('user_role'),
+      role: prefs.getString('user_role') ?? 'patient', // ✅ default patient
       isApproved: prefs.getInt('user_isApproved'),
       profilePicture: prefs.getString('user_profilePicture'),
       createdAt: prefs.getString('user_createdAt'),
@@ -96,6 +105,11 @@ class PatientModel {
   // fromJson من تسجيل الدخول
   factory PatientModel.fromLoginResponse(
       Map<String, dynamic> patientData, Map<String, dynamic> userData) {
+    final user = User.fromJson({
+      ...userData,
+      'role': userData['role'] ?? 'patient', // ✅ نضمن دايمًا patient
+    });
+
     return PatientModel(
       id: patientData['id'] ?? 0,
       userId: patientData['user_id'] ?? 0,
@@ -108,7 +122,7 @@ class PatientModel {
       casesCount: patientData['cases_count'] != null
           ? int.tryParse(patientData['cases_count'].toString())
           : null,
-      user: User.fromJson(userData),
+      user: user,
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:health_bridge/config/content/custom_text_field.dart';
 import 'package:health_bridge/config/content/valid.dart';
+import 'package:health_bridge/local/app_localizations.dart';
 import 'package:health_bridge/service/api_service.dart';
 
 class ChatBotPatient extends StatefulWidget {
@@ -14,6 +15,7 @@ class _ChatBotPatientState extends State<ChatBotPatient> {
   final TextEditingController _controller = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final List<_ChatMessage> _messages = [];
+  bool _isLoading = false;
 
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
@@ -22,20 +24,34 @@ class _ChatBotPatientState extends State<ChatBotPatient> {
         setState(() {
           _messages.add(_ChatMessage(text: text, isSent: true));
           _controller.clear();
+          _isLoading = true;
         });
 
-        // ⬅️ هنا نستدعي ApiService
-        final botReply = await ApiService.sendMessage(text);
+        try {
+          // ⬅️ هنا نستدعي ApiService
+          final botReply = await ApiService.sendMessage(text);
 
-        setState(() {
-          _messages.add(_ChatMessage(text: botReply, isSent: false));
-        });
+          setState(() {
+            _messages.add(_ChatMessage(text: botReply, isSent: false));
+            _isLoading = false;
+          });
+        } catch (e) {
+          setState(() {
+            _messages.add(_ChatMessage(
+              text: AppLocalizations.of(context)!.get('error_sending_message'),
+              isSent: false,
+            ));
+            _isLoading = false;
+          });
+        }
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -45,8 +61,45 @@ class _ChatBotPatientState extends State<ChatBotPatient> {
                 padding:
                     const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
                 reverse: false,
-                itemCount: _messages.length,
+                itemCount: _messages.length + (_isLoading ? 1 : 0),
                 itemBuilder: (context, index) {
+                  if (index == _messages.length && _isLoading) {
+                    // عرض مؤشر التحميل عندما يكون الرد قيد التنفيذ
+                    return Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 16),
+                        constraints: BoxConstraints(
+                          maxWidth: MediaQuery.of(context).size.width * 0.7,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0F0F0),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              loc!.get('typing'),
+                              style: const TextStyle(
+                                color: Colors.black87,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
                   final message = _messages[index];
                   final isSent = message.isSent;
                   return Align(
@@ -100,7 +153,7 @@ class _ChatBotPatientState extends State<ChatBotPatient> {
                           return Valid().vaidInput(p0!, 1, 200);
                         },
                         max: 1,
-                        hint1: 'Type your message...',
+                        hint1: loc!.get('type_message_hint'),
                       ),
                     ),
                     const SizedBox(width: 8),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:health_bridge/local/app_localizations.dart';
 import 'package:health_bridge/my_flutter_app_icons.dart';
 import 'package:health_bridge/providers/health_value_provider.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
@@ -16,41 +17,42 @@ class _AddsugarState extends ConsumerState<Addsugar> {
   double sliderValue = 90;
   bool isFasting = false;
 
-  /// حساب حالة السكر
+  /// حساب حالة السكر (ترجع القيم الثابتة: low, normal, prediabetes, high)
   String calculateSugarStatus(double value, bool fasting) {
     if (fasting) {
-      if (value < 70) return 'Low';
-      if (value <= 100) return 'Normal';
-      if (value <= 125) return 'Prediabetes';
-      return 'High';
+      if (value < 70) return 'low';
+      if (value <= 100) return 'normal';
+      if (value <= 125) return 'prediabetes';
+      return 'high';
     } else {
-      if (value < 90) return 'Low';
-      if (value <= 139) return 'Normal';
-      if (value <= 199) return 'Prediabetes';
-      return 'High';
+      if (value < 90) return 'low';
+      if (value <= 139) return 'normal';
+      if (value <= 199) return 'prediabetes';
+      return 'high';
     }
   }
 
   /// حفظ القيمة باستخدام HealthValueController
   Future<void> addValue() async {
-    final statusText = calculateSugarStatus(sliderValue, isFasting);
+    final loc = AppLocalizations.of(context);
+    final status = calculateSugarStatus(sliderValue, isFasting);
 
     final success =
         await ref.read(healthValueControllerProvider.notifier).addHealthValue(
               2, // diseaseId للسكر
               sliderValue.round(),
               valuee: 0,
-              status: statusText,
+              status: status,
             );
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم حفظ قياس السكر بنجاح')),
+        SnackBar(content: Text(loc!.get('sugar_saved_success'))),
       );
       context.pop();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('فشل في حفظ القياس')),
+        SnackBar(content: Text(loc!.get('failed_save_measurement'))),
       );
     }
   }
@@ -60,7 +62,7 @@ class _AddsugarState extends ConsumerState<Addsugar> {
     final theme = Theme.of(context);
     final primaryColor = theme.primaryColor;
     final textColor = theme.textTheme.bodyLarge?.color ?? Colors.black;
-    final switchActiveColor = theme.colorScheme.secondary;
+    final loc = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -75,13 +77,13 @@ class _AddsugarState extends ConsumerState<Addsugar> {
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 8),
             decoration: BoxDecoration(
-              color: switchActiveColor,
+              color: primaryColor,
               border: Border.all(),
               borderRadius: BorderRadius.circular(30),
             ),
             child: IconButton(
-              highlightColor: switchActiveColor,
-              color: primaryColor,
+              highlightColor: primaryColor.withOpacity(0.5),
+              color: Colors.white,
               onPressed: addValue,
               icon: const Icon(
                 Icons.check_outlined,
@@ -98,17 +100,14 @@ class _AddsugarState extends ConsumerState<Addsugar> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                'Blood sugar value: ${sliderValue.round()} mg/dL',
+                '${loc!.get('blood_sugar_value')}: ${sliderValue.round()} ${loc.get('mgdl')}',
                 style: TextStyle(
                   color: textColor,
                   fontSize: 25,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 20),
-
-              // حالة الصيام
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -119,10 +118,12 @@ class _AddsugarState extends ConsumerState<Addsugar> {
                         isFasting = value;
                       });
                     },
-                    activeColor: switchActiveColor,
+                    activeColor: primaryColor,
+                    inactiveThumbColor: Colors.grey[400],
+                    inactiveTrackColor: Colors.grey[300],
                   ),
                   Text(
-                    'Fasting',
+                    loc.get('fasting'),
                     style: TextStyle(
                       color: textColor,
                       fontWeight: FontWeight.bold,
@@ -131,10 +132,7 @@ class _AddsugarState extends ConsumerState<Addsugar> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 20),
-
-              // مؤشر حالة السكر الحالية
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -145,7 +143,7 @@ class _AddsugarState extends ConsumerState<Addsugar> {
                       color: _getStatusColor(sliderValue, isFasting)),
                 ),
                 child: Text(
-                  'الحالة: ${_getStatusText(sliderValue, isFasting)}',
+                  '${loc.get('status')}: ${_getStatusText(sliderValue, isFasting, loc)}',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -153,10 +151,7 @@ class _AddsugarState extends ConsumerState<Addsugar> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
-
-              // المقياس
               SfRadialGauge(
                 axes: <RadialAxis>[
                   RadialAxis(
@@ -199,7 +194,7 @@ class _AddsugarState extends ConsumerState<Addsugar> {
                     annotations: <GaugeAnnotation>[
                       GaugeAnnotation(
                         widget: Text(
-                          '${sliderValue.round()} mg/dL',
+                          '${sliderValue.round()} ${loc.get('mgdl')}',
                           style: TextStyle(
                             color: textColor,
                             fontSize: 20,
@@ -213,14 +208,11 @@ class _AddsugarState extends ConsumerState<Addsugar> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 20),
-
-              // وسيلة الإيضاح
               Wrap(
                 alignment: WrapAlignment.center,
                 spacing: 10,
-                children: _getLegendItems(isFasting),
+                children: _getLegendItems(isFasting, loc),
               ),
             ],
           ),
@@ -229,41 +221,38 @@ class _AddsugarState extends ConsumerState<Addsugar> {
     );
   }
 
-  // الحصول على الألوان بناءً على الحالة
   Color _getStatusColor(double value, bool fasting) {
     final status = calculateSugarStatus(value, fasting);
     switch (status) {
-      case 'Low':
+      case 'low':
         return Colors.blue;
-      case 'Normal':
+      case 'normal':
         return Colors.green;
-      case 'Prediabetes':
+      case 'prediabetes':
         return Colors.orange;
-      case 'High':
+      case 'high':
         return Colors.red;
       default:
         return Colors.grey;
     }
   }
 
-  // الحصول على النص بناءً على الحالة
-  String _getStatusText(double value, bool fasting) {
+  String _getStatusText(double value, bool fasting, AppLocalizations loc) {
     final status = calculateSugarStatus(value, fasting);
     switch (status) {
-      case 'Low':
-        return 'منخفض';
-      case 'Normal':
-        return 'طبيعي';
-      case 'Prediabetes':
-        return 'ما قبل السكري';
-      case 'High':
-        return 'مرتفع';
+      case 'low':
+        return loc.get('low');
+      case 'normal':
+        return loc.get('normal');
+      case 'prediabetes':
+        return loc.get('prediabetes');
+      case 'high':
+        return loc.get('high');
       default:
-        return 'غير معروف';
+        return loc.get('unknown');
     }
   }
 
-  // النطاقات
   List<GaugeRange> _getSugarRanges(bool fasting) {
     if (fasting) {
       return [
@@ -282,16 +271,15 @@ class _AddsugarState extends ConsumerState<Addsugar> {
     }
   }
 
-  // وسيلة الإيضاح
-  List<Widget> _getLegendItems(bool fasting) {
+  List<Widget> _getLegendItems(bool fasting, AppLocalizations loc) {
     return [
-      const LegendItem(color: Colors.blue, label: 'منخفض'),
-      const LegendItem(color: Colors.green, label: 'طبيعي'),
+      LegendItem(color: Colors.blue, label: loc.get('low')),
+      LegendItem(color: Colors.green, label: loc.get('normal')),
       if (fasting)
-        const LegendItem(color: Colors.orange, label: 'ما قبل السكري')
+        LegendItem(color: Colors.orange, label: loc.get('prediabetes'))
       else
-        const LegendItem(color: Colors.orange, label: 'مرتفع قليلاً'),
-      const LegendItem(color: Colors.red, label: 'مرتفع'),
+        LegendItem(color: Colors.orange, label: loc.get('slightly_high')),
+      LegendItem(color: Colors.red, label: loc.get('high')),
     ];
   }
 }

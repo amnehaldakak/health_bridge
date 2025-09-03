@@ -12,7 +12,7 @@ class EventCarde extends StatelessWidget {
       margin: EdgeInsets.all(15),
       padding: EdgeInsets.all(15),
       decoration: BoxDecoration(
-          color: isPast ? blue4 : blue3,
+          color: isPast ? blue3 : blue4,
           border: Border.all(color: blue2),
           borderRadius: BorderRadius.circular(15)),
       child: child,

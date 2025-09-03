@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:health_bridge/constant/color.dart';
+import 'package:health_bridge/local/app_localizations.dart';
 import 'package:health_bridge/my_flutter_app_icons.dart';
 import 'package:health_bridge/providers/health_value_provider.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
@@ -19,14 +20,17 @@ class _AddBloodPreState extends ConsumerState<AddBloodPre> {
 
   /// تابع لحساب حالة ضغط الدم
   String calculateBloodPressureStatus(int systolic, int diastolic) {
-    if (systolic < 90 || diastolic < 60) return 'Low';
-    if (systolic <= 120 && diastolic <= 80) return 'Normal';
-    if (systolic <= 129 && diastolic <= 84) return 'Elevated';
-    if (systolic <= 139 || diastolic <= 89) return 'High';
-    return 'Very High';
+    final loc = AppLocalizations.of(context);
+
+    if (systolic < 90 || diastolic < 60) return loc!.get('low');
+    if (systolic <= 120 && diastolic <= 80) return loc!.get('normal');
+    if (systolic <= 129 && diastolic <= 84) return loc!.get('elevated');
+    if (systolic <= 139 || diastolic <= 89) return loc!.get('high');
+    return loc!.get('very_high');
   }
 
   void _addBloodPressure() async {
+    final loc = AppLocalizations.of(context);
     final success =
         await ref.read(healthValueControllerProvider.notifier).addHealthValue(
               1, // diseaseId لضغط الدم
@@ -37,12 +41,12 @@ class _AddBloodPreState extends ConsumerState<AddBloodPre> {
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم حفظ قياس الضغط بنجاح')),
+        SnackBar(content: Text(loc!.get('pressure_saved_success'))),
       );
       context.pop();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('فشل في حفظ القياس')),
+        SnackBar(content: Text(loc!.get('failed_save_measurement'))),
       );
     }
   }
@@ -56,6 +60,7 @@ class _AddBloodPreState extends ConsumerState<AddBloodPre> {
     final theme = Theme.of(context);
     final primaryColor = theme.primaryColor;
     final textColor = theme.textTheme.bodyLarge?.color ?? Colors.black;
+    final loc = AppLocalizations.of(context);
 
     return SliderTheme(
       data: SliderThemeData(
@@ -65,7 +70,7 @@ class _AddBloodPreState extends ConsumerState<AddBloodPre> {
       ),
       child: Scaffold(
         appBar: AppBar(
-          title: const Icon(
+          title: Icon(
             MyFlutterApp.noun_blood_pressure_7315638,
             size: 50,
           ),
@@ -91,7 +96,7 @@ class _AddBloodPreState extends ConsumerState<AddBloodPre> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             Text(
-              'Blood Pressure: ${systolic.round()}/${diastolic.round()} mmHg',
+              '${loc!.get('blood_pressure')}: ${systolic.round()}/${diastolic.round()} ${loc.get('mmhg')}',
               style: TextStyle(
                   fontSize: 20, fontWeight: FontWeight.bold, color: textColor),
             ),
@@ -146,9 +151,9 @@ class _AddBloodPreState extends ConsumerState<AddBloodPre> {
                     ),
                   ],
                   annotations: <GaugeAnnotation>[
-                    const GaugeAnnotation(
+                    GaugeAnnotation(
                       widget: Text(
-                        'Systolic',
+                        loc.get('systolic'),
                         style: TextStyle(
                             fontSize: 15, fontWeight: FontWeight.bold),
                       ),
@@ -204,9 +209,9 @@ class _AddBloodPreState extends ConsumerState<AddBloodPre> {
                     ),
                   ],
                   annotations: <GaugeAnnotation>[
-                    const GaugeAnnotation(
+                    GaugeAnnotation(
                       widget: Text(
-                        'Diastolic',
+                        loc.get('diastolic'),
                         style: TextStyle(
                             fontSize: 15, fontWeight: FontWeight.bold),
                       ),
@@ -220,9 +225,9 @@ class _AddBloodPreState extends ConsumerState<AddBloodPre> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                LegendItem(color: Colors.green, label: 'Normal'),
-                LegendItem(color: Colors.yellow, label: 'High'),
-                LegendItem(color: Colors.orange, label: 'Very high'),
+                LegendItem(color: Colors.green, label: loc.get('normal')),
+                LegendItem(color: Colors.yellow, label: loc.get('high')),
+                LegendItem(color: Colors.orange, label: loc.get('very_high')),
               ],
             ),
           ],

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:health_bridge/config/content/patient_card.dart';
 import 'package:health_bridge/models/case.dart';
 import 'package:health_bridge/models/patient.dart';
+import 'package:health_bridge/providers/auth_provider.dart';
 import 'package:health_bridge/providers/patient_cases_provider.dart';
 import 'package:health_bridge/constant/color.dart';
 
@@ -15,6 +16,7 @@ class PatientCasesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final casesAsync = ref.watch(patientCasesProvider(patient));
+    final String role = ref.watch(currentUserProvider)!.role;
 
     return Scaffold(
       body: RefreshIndicator(
@@ -23,38 +25,43 @@ class PatientCasesPage extends ConsumerWidget {
         },
         child: CustomScrollView(
           slivers: [
-            /// 🔹 الهيدر
-            SliverAppBar(
-              expandedHeight: 200,
-              pinned: true,
-              backgroundColor: Colors.blue,
-              flexibleSpace: FlexibleSpaceBar(
-                title: Text(patient.user.name),
-                background: Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.blue, Colors.lightBlue],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+            /// 🔹 الهيدر (يظهر فقط إذا لم يكن الدور "patient")
+            if (role != "patient")
+              SliverAppBar(
+                expandedHeight: 200,
+                pinned: true,
+                backgroundColor: Colors.blue,
+                flexibleSpace: FlexibleSpaceBar(
+                  title: role == "doctor"
+                      ? Text(patient.user.name)
+                      : const Text("معلومات المريض"),
+                  background: Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.blue, Colors.lightBlue],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                     ),
-                  ),
-                  child: const Center(
-                    child: CircleAvatar(
-                      radius: 50,
-                      backgroundColor: Colors.white,
-                      child: Icon(Icons.person, size: 60, color: Colors.blue),
+                    child: const Center(
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Colors.white,
+                        child: Icon(Icons.person, size: 60, color: Colors.blue),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
 
-            /// 🔹 Patient Card
+            /// 🔹 Patient Card (يظهر فقط إذا كان المستخدم طبيب)
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: PatientCard(patient: patient),
-              ),
+              child: role == "doctor"
+                  ? Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: PatientCard(patient: patient),
+                    )
+                  : const SizedBox.shrink(),
             ),
 
             /// 🔹 عرض سجل الحالات
@@ -84,9 +91,11 @@ class PatientCasesPage extends ConsumerWidget {
                                   fontWeight: FontWeight.bold),
                             ),
                           ),
-                          title: Text(caseItem.diagnosis ?? "غير محدد",
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold, color: blue3)),
+                          title: Text(
+                            caseItem.diagnosis ?? "غير محدد",
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, color: blue3),
+                          ),
                           subtitle: Text(
                             "تم التحديث: ${caseItem.updatedAt?.split("T").first ?? "غير معروف"}",
                             style: const TextStyle(color: Colors.blueGrey),

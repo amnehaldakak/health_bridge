@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:health_bridge/config/content/build_section_title.dart';
 import 'package:health_bridge/config/content/convert_time.dart';
+import 'package:health_bridge/local/app_localizations.dart';
 import 'package:health_bridge/models/medication_time.dart';
 import 'package:health_bridge/my_flutter_app_icons.dart';
 import 'package:health_bridge/providers/auth_provider.dart';
@@ -59,12 +60,13 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
     if (_formKey.currentState?.validate() != true) return;
 
     final user = ref.read(currentUserProvider);
+    final loc = AppLocalizations.of(context);
 
     if (user?.role == 'patient') {
       // ✅ المريض لازم يختار وقت وتاريخ
       if (selectedTime == null || selectedStartDate == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('يرجى اختيار الوقت والتاريخ')),
+          SnackBar(content: Text(loc!.get('select_time_date'))),
         );
         return;
       }
@@ -85,32 +87,30 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
         );
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم حفظ الدواء بنجاح')),
+          SnackBar(content: Text(loc!.get('medicine_saved_success'))),
         );
 
         context.goNamed('home_patient');
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('فشل حفظ الدواء: $e')),
+          SnackBar(content: Text('${loc!.get('save_medicine_failed')}: $e')),
         );
       }
     } else if (user?.role == 'doctor') {
       // ✅ الطبيب يضيف الدواء للقائمة فقط
       ref.read(medicineListProvider.notifier).addMedicine(
             MedicationTime(
-              medicationTimeId: null,
-              userId: user?.id.toString() ?? "0",
-              medicationName: medicineName.text,
-              amount: dosageAmount.text,
-              timePerDay: selectedRepetition,
-              firstDoseTime: "", // الطبيب ما يحدد وقت
-              startDate: DateTime.now(), // تاريخ افتراضي
-              durationDays: int.parse(selectedDurationDays),
-            ),
+                name: medicineName.text,
+                dosage: dosageAmount.text,
+                frequency: selectedRepetition,
+                firstDoseTime: "", // الطبيب ما يحدد وقت
+                startDate: DateTime.now(), // تاريخ افتراضي
+                duration: int.parse(selectedDurationDays),
+                medicationId: null),
           );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تمت إضافة الدواء إلى القائمة')),
+        SnackBar(content: Text(loc!.get('medicine_added_to_list'))),
       );
 
       Navigator.pop(context); // ✅ يرجع للصفحة السابقة
@@ -123,10 +123,11 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
     final colorScheme = theme.colorScheme;
     final user = ref.watch(currentUserProvider);
     final isPatient = user?.role == 'patient';
+    final loc = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('إضافة دواء'),
+        title: Text(loc!.get('add_medicine')),
         centerTitle: true,
       ),
       body: Form(
@@ -134,12 +135,13 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            buildSectionTitle('اسم الدواء', theme),
+            buildSectionTitle(loc.get('medicine_name'), theme),
             TextFormField(
               controller: medicineName,
-              validator: (val) => val == null || val.isEmpty ? 'مطلوب' : null,
+              validator: (val) =>
+                  val == null || val.isEmpty ? loc.get('required') : null,
               decoration: InputDecoration(
-                hintText: 'مثال: أموكسيسيلين',
+                hintText: loc.get('example_amoxicillin'),
                 border: const OutlineInputBorder(),
                 filled: true,
                 fillColor: colorScheme.surfaceVariant,
@@ -147,12 +149,13 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
             ),
             const SizedBox(height: 16),
 
-            buildSectionTitle('الجرعة', theme),
+            buildSectionTitle(loc.get('dosage'), theme),
             TextFormField(
               controller: dosageAmount,
-              validator: (val) => val == null || val.isEmpty ? 'مطلوب' : null,
+              validator: (val) =>
+                  val == null || val.isEmpty ? loc.get('required') : null,
               decoration: InputDecoration(
-                hintText: 'مثال: 500mg',
+                hintText: loc.get('example_500mg'),
                 border: const OutlineInputBorder(),
                 filled: true,
                 fillColor: colorScheme.surfaceVariant,
@@ -160,13 +163,13 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
             ),
             const SizedBox(height: 16),
 
-            buildSectionTitle('عدد مرات الاستخدام يومياً', theme),
+            buildSectionTitle(loc.get('daily_usage_times'), theme),
             DropdownButtonFormField<int>(
               value: selectedRepetition,
               onChanged: (val) => setState(() => selectedRepetition = val!),
               items: repetitions
-                  .map(
-                      (e) => DropdownMenuItem(value: e, child: Text('$e مرات')))
+                  .map((e) => DropdownMenuItem(
+                      value: e, child: Text('${loc.get('times')} $e')))
                   .toList(),
               decoration: InputDecoration(
                 border: const OutlineInputBorder(),
@@ -178,12 +181,12 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
             // ✅ يظهر فقط للمريض
             if (isPatient) ...[
               const SizedBox(height: 16),
-              buildSectionTitle('وقت الجرعة الأولى', theme),
+              buildSectionTitle(loc.get('first_dose_time'), theme),
               ElevatedButton.icon(
                 onPressed: () => _pickTime(context),
                 icon: const Icon(MyFlutterApp.clock),
                 label: Text(selectedTime == null
-                    ? 'اختر الوقت'
+                    ? loc.get('select_time')
                     : "${convertTime(selectedTime!.hour.toString())}:${convertTime(selectedTime!.minute.toString())}"),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorScheme.primary,
@@ -192,12 +195,12 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
                 ),
               ),
               const SizedBox(height: 16),
-              buildSectionTitle('تاريخ البدء', theme),
+              buildSectionTitle(loc.get('start_date'), theme),
               ElevatedButton.icon(
                 onPressed: () => _pickDate(context),
                 icon: const Icon(MyFlutterApp.calendar),
                 label: Text(selectedStartDate == null
-                    ? 'اختر التاريخ'
+                    ? loc.get('select_date')
                     : DateFormat('y/M/d').format(selectedStartDate!)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorScheme.primary,
@@ -208,12 +211,13 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
             ],
 
             const SizedBox(height: 16),
-            buildSectionTitle('عدد أيام الاستخدام', theme),
+            buildSectionTitle(loc.get('usage_days_count'), theme),
             DropdownButtonFormField<String>(
               value: selectedDurationDays,
               onChanged: (val) => setState(() => selectedDurationDays = val!),
               items: durations
-                  .map((e) => DropdownMenuItem(value: e, child: Text('$e يوم')))
+                  .map((e) => DropdownMenuItem(
+                      value: e, child: Text('${loc.get('day')} $e')))
                   .toList(),
               decoration: InputDecoration(
                 border: const OutlineInputBorder(),
@@ -230,7 +234,7 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
                 foregroundColor: colorScheme.onPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: const Text('حفظ الدواء'),
+              child: Text(loc.get('save_medicine')),
             ),
           ],
         ),

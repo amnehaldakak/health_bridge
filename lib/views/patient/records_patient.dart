@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:health_bridge/config/content/health_value_card.dart';
 import 'package:health_bridge/controller/health_value_controller.dart';
+import 'package:health_bridge/local/app_localizations.dart';
 import 'package:health_bridge/models/health_value.dart';
 import 'package:health_bridge/models/patient.dart';
 import 'package:health_bridge/my_flutter_app_icons.dart';
@@ -47,7 +48,8 @@ class _RecordsPatientState extends ConsumerState<RecordsPatient> {
       print("Error loading patient data: $e");
       if (mounted) {
         setState(() {
-          _errorMessage = 'فشل في تحميل بيانات المريض';
+          _errorMessage =
+              AppLocalizations.of(context)!.get('failed_load_patient_data');
         });
       }
     }
@@ -56,13 +58,8 @@ class _RecordsPatientState extends ConsumerState<RecordsPatient> {
   Future<void> _loadAllHealthValues() async {
     try {
       final controller = ref.read(healthValueControllerProvider.notifier);
-
-      // تحميل قيم ضغط الدم (diseaseId = 1)
-      await controller.loadHealthValues(1);
-
-      // تحميل قيم السكر (diseaseId = 2)
-      await controller.loadHealthValues(2);
-
+      await controller.loadHealthValues(1); // ضغط الدم
+      await controller.loadHealthValues(2); // السكر
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -73,7 +70,8 @@ class _RecordsPatientState extends ConsumerState<RecordsPatient> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'فشل في تحميل البيانات الصحية';
+          _errorMessage =
+              AppLocalizations.of(context)!.get('failed_load_health_data');
         });
       }
     }
@@ -90,21 +88,26 @@ class _RecordsPatientState extends ConsumerState<RecordsPatient> {
   Future<void> _refreshHealthData() async {
     try {
       final controller = ref.read(healthValueControllerProvider.notifier);
-
-      // إعادة تحميل كل الأمراض
       await controller.loadHealthValues(1);
       await controller.loadHealthValues(2);
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم تحديث البيانات بنجاح')),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.get('data_updated_success'),
+            ),
+          ),
         );
       }
     } catch (e) {
       print("Error refreshing health data: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('فشل في تحديث البيانات')),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.get('failed_update_data'),
+            ),
+          ),
         );
       }
     }
@@ -113,6 +116,7 @@ class _RecordsPatientState extends ConsumerState<RecordsPatient> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context);
 
     if (_isLoading) {
       return const Scaffold(
@@ -130,7 +134,7 @@ class _RecordsPatientState extends ConsumerState<RecordsPatient> {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _refreshData,
-                child: const Text('إعادة المحاولة'),
+                child: Text(loc!.get('try_again')),
               ),
             ],
           ),
@@ -144,17 +148,21 @@ class _RecordsPatientState extends ConsumerState<RecordsPatient> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('لا توجد بيانات للمريض'),
+              Text(loc!.get('no_patient_data')),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _refreshData,
-                child: const Text('إعادة تحميل'),
+                child: Text(loc.get('reload')),
               ),
             ],
           ),
         ),
       );
     }
+
+    // تحديد لغة CalendarTimeline بناءً على لغة التطبيق
+    final localeCode = Localizations.localeOf(context).languageCode;
+    final calendarLocale = (localeCode == 'en') ? 'en' : 'ar';
 
     return Consumer(
       builder: (context, ref, child) {
@@ -177,9 +185,9 @@ class _RecordsPatientState extends ConsumerState<RecordsPatient> {
                 labelStyle:
                     const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                 unselectedLabelStyle: const TextStyle(fontSize: 15),
-                tabs: const [
-                  Tab(text: 'Health Value'),
-                  Tab(text: 'Patient Records'),
+                tabs: [
+                  Tab(text: loc!.get('health_value')),
+                  Tab(text: loc.get('patient_records')),
                 ],
               ),
             ),
@@ -227,7 +235,7 @@ class _RecordsPatientState extends ConsumerState<RecordsPatient> {
                               .unselectedItemColor,
                           dotColor: const Color(0xFF333A47),
                           selectableDayPredicate: (date) => date.day != 0,
-                          locale: 'en',
+                          locale: calendarLocale, // <-- اللغة حسب التطبيق
                         ),
                         const SizedBox(height: 16),
                         Expanded(
@@ -251,6 +259,8 @@ class _RecordsPatientState extends ConsumerState<RecordsPatient> {
 
   Widget _buildHealthValuesContent(
       HealthValueState healthState, List<HealthValue> filteredValues) {
+    final loc = AppLocalizations.of(context);
+
     if (healthState is HealthValueLoading) {
       return const Center(child: CircularProgressIndicator());
     } else if (healthState is HealthValueError) {
@@ -262,21 +272,21 @@ class _RecordsPatientState extends ConsumerState<RecordsPatient> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _refreshHealthData,
-              child: const Text('إعادة المحاولة'),
+              child: Text(loc!.get('try_again')),
             ),
           ],
         ),
       );
     } else if (filteredValues.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.inbox, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text(
-              "لا توجد بيانات في هذا اليوم",
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+              loc!.get('no_data_today'),
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
           ],
         ),
@@ -298,17 +308,19 @@ class _RecordsPatientState extends ConsumerState<RecordsPatient> {
                   ? MyFlutterApp.noun_blood_pressure_7315638
                   : MyFlutterApp.noun_diabetes_test_7357853,
               text:
-                  "${val.diseaseType}: ${val.displayValue} (${val.status ?? ''})\nتم الإدخال: ${val.createdAt.hour}:${val.createdAt.minute.toString().padLeft(2, '0')}",
+                  "${val.diseaseType}: ${val.displayValue} (${val.status ?? ''})\n${loc!.get('entered_at')} ${val.createdAt.hour}:${val.createdAt.minute.toString().padLeft(2, '0')}",
               onDelete: () async {
                 final success = await ref
                     .read(healthValueControllerProvider.notifier)
                     .deleteHealthValue(val.id);
                 if (!success) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('فشل في حذف القيمة id=${val.id}')),
+                    SnackBar(
+                      content: Text(
+                          '${loc.get('failed_delete_value')} id=${val.id}'),
+                    ),
                   );
                 } else {
-                  // تحديث البيانات بعد الحذف
                   _refreshHealthData();
                 }
               },

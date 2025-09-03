@@ -8,7 +8,7 @@ class User {
   final String? passwordConfirmation;
   final File? profileImage;
   final String? profilePicture;
-  final String? role;
+  final String role;
   final int? isApproved;
   final String? emailVerifiedAt;
   final String? createdAt;
@@ -22,7 +22,7 @@ class User {
     this.passwordConfirmation,
     this.profileImage,
     this.profilePicture,
-    this.role,
+    required this.role,
     this.isApproved,
     this.emailVerifiedAt,
     this.createdAt,
@@ -32,16 +32,24 @@ class User {
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['id'] as int?,
-      name: (json['name'] ?? '') as String, // ✅ افتراضي قيمة فارغة
-      email: (json['email'] ?? '') as String, // ✅ افتراضي قيمة فارغة
+      name: (json['name'] ?? '') as String, // safe default
+      email: (json['email'] ?? '') as String, // safe default
+
+      // بعض الـ responses ما بيرجع email_verified_at
       emailVerifiedAt: json['email_verified_at'] as String?,
-      role: json['role'] as String?,
+
+      // ✅ إذا ما رجع role من السيرفر، نخلي default "patient"
+      role: (json['role'] ?? 'patient') as String,
+
+      // ✅ is_approved ممكن يجي bool أو int أو null
       isApproved: json['is_approved'] is bool
-          ? (json['is_approved'] ? 1 : 0)
+          ? ((json['is_approved'] as bool) ? 1 : 0)
           : (json['is_approved'] as int?),
+
       profilePicture: json['profile_picture'] as String?,
-      createdAt: json['created_at'] as String?,
-      updatedAt: json['updated_at'] as String?,
+
+      createdAt: json['created_at']?.toString(),
+      updatedAt: json['updated_at']?.toString(),
     );
   }
 
