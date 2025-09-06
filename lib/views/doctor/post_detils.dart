@@ -1,154 +1,190 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:health_bridge/local/app_localizations.dart';
 import 'package:health_bridge/models/comment.dart';
 import 'package:health_bridge/models/post.dart';
+import 'package:health_bridge/providers/CommunityProvider.dart';
+import 'package:health_bridge/providers/case_provider.dart';
 
-class PostDetailPage extends StatelessWidget {
+class PostDetailPage extends ConsumerStatefulWidget {
   final Post post;
 
   const PostDetailPage({super.key, required this.post});
 
-  final List<Comment> comments = const [
-    Comment(
-      id: '1',
-      author: 'Jackson Allen',
-      content:
-          'Great idea, the app gets better and better every time. You can immediately see that it was made "for people"',
-      date: '5 Sep at 10:49',
-      replies: 0,
-    ),
-    Comment(
-      id: '2',
-      author: 'Evan Phillips',
-      content: 'How does it work with raster?',
-      date: '5 Sep at 10:49',
-      replies: 0,
-    ),
-    Comment(
-      id: '3',
-      author: 'Jackson Allen',
-      content: 'Cool',
-      date: '5 Sep at 10:49',
-      replies: 0,
-    ),
-    Comment(
-      id: '4',
-      author: 'Camila Reed',
-      content: 'I\'ll leave this comment here',
-      date: '5 Sep at 10:49',
-      replies: 0,
-    ),
-  ];
+  @override
+  ConsumerState<PostDetailPage> createState() => _PostDetailPageState();
+}
+
+class _PostDetailPageState extends ConsumerState<PostDetailPage> {
+  List<Comment> comments = [];
+  bool isLoading = true;
+  final TextEditingController commentController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadComments();
+    // 🟢 إذا المنشور يحتوي على حالة، جلب تفاصيل الحالة
+    if (widget.post.caseId != null) {
+      Future.microtask(() {
+        ref.read(caseProvider).fetchCaseDetails(widget.post.caseId!);
+      });
+    }
+  }
+
+  Future<void> _loadComments() async {
+    final provider = ref.read(communityProvider);
+    setState(() => isLoading = true);
+
+    final postData =
+        await provider.fetchPostWithComments(widget.post.id.toString());
+    if (postData != null && postData['comments'] != null) {
+      comments = (postData['comments'] as List)
+          .map((e) => Comment.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+
+    setState(() => isLoading = false);
+  }
+
+  // 🟢 إضافة تعليق
+  Future<void> _addComment(String content) async {
+    if (content.trim().isEmpty) return;
+
+    final provider = ref.read(communityProvider);
+    await provider.addComment(
+        postId: widget.post.id.toString(), content: content);
+
+    commentController.clear();
+    await _loadComments(); // إعادة تحميل التعليقات بعد الإضافة
+  }
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+    final localeCode = loc!.locale.languageCode; // "ar" أو "en"
+
+    final caseState = ref.watch(caseProvider);
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(post.title),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Post content
-            Padding(
-              padding: const EdgeInsets.all(16),
+      appBar: AppBar(title: Text(widget.post.title ?? loc.get('post'))),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Text(
-                        post.title,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 🟢 معلومات الناشر
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 20,
+                              backgroundImage: widget.post.authorImageUrl !=
+                                      null
+                                  ? NetworkImage(widget.post.authorImageUrl!)
+                                  : null,
+                              child: widget.post.authorImageUrl == null
+                                  ? Text(widget.post.authorName.substring(0, 1))
+                                  : null,
+                            ),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.post.authorName,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14),
+                                ),
+                                Text(
+                                  widget
+                                      .post.timeAgo, // حسب اللغة من Post model
+                                  style: TextStyle(
+                                      color: Colors.grey[600], fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        post.date,
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 12,
+                        const SizedBox(height: 12),
+
+                        // 🟢 محتوى البوست
+                        Text(
+                          widget.post.content ?? '',
+                          style: const TextStyle(fontSize: 15),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    post.content,
-                    style: const TextStyle(fontSize: 15),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Source: ${post.author}',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
+
+                        const SizedBox(height: 16),
+
+                        // 🔹 إذا هناك حالة مرتبطة، عرض معلوماتها بدون زر
+                        if (widget.post.caseId != null)
+                          Card(
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                            color: Colors.grey.shade100,
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: caseState.isLoading
+                                  ? const Center(
+                                      child: CircularProgressIndicator())
+                                  : caseState.medicalCase == null
+                                      ? Text(loc.get('case_not_found'))
+                                      : Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              loc.get('case_details'),
+                                              style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              "${loc.get('main_complaint')}: ${caseState.medicalCase!.chiefComplaint ?? loc.get('not_specified')}",
+                                            ),
+                                            Text(
+                                              "${loc.get('symptoms')}: ${caseState.medicalCase!.symptoms ?? loc.get('not_specified')}",
+                                            ),
+                                            Text(
+                                              "${loc.get('diagnosis')}: ${caseState.medicalCase!.diagnosis ?? loc.get('not_specified')}",
+                                            ),
+                                          ],
+                                        ),
+                            ),
+                          ),
+
+                        const Divider(),
+                        Text(
+                          loc.get('comments'),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                      ],
                     ),
                   ),
-                  const Divider(height: 32),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.favorite_border,
-                              size: 20, color: Colors.grey[600]),
-                          const SizedBox(width: 4),
-                          Text('${post.likes}'),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Icon(Icons.comment,
-                              size: 20, color: Colors.grey[600]),
-                          const SizedBox(width: 4),
-                          Text('${post.comments}'),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Icon(Icons.share, size: 20, color: Colors.grey[600]),
-                          const SizedBox(width: 4),
-                          Text('${post.shares}'),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 32),
-                  const Text(
-                    'Comments',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+
+                  // 🟢 قائمة التعليقات
+                  ListView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,
+                    itemCount: comments.length,
+                    itemBuilder: (context, index) {
+                      final comment = comments[index];
+                      return _buildCommentCard(comment, localeCode);
+                    },
                   ),
                 ],
               ),
             ),
 
-            // Comments list
-            ListView.builder(
-              physics: const NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              itemCount: comments.length,
-              itemBuilder: (context, index) {
-                final comment = comments[index];
-                return _buildCommentCard(comment);
-              },
-            ),
-
-            // Show more comments button
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: OutlinedButton(
-                onPressed: () {},
-                child: const Text('Show more comments'),
-              ),
-            ),
-          ],
-        ),
-      ),
+      // 🟢 حقل إضافة تعليق
       bottomNavigationBar: BottomAppBar(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -156,8 +192,9 @@ class PostDetailPage extends StatelessWidget {
             children: [
               Expanded(
                 child: TextField(
+                  controller: commentController,
                   decoration: InputDecoration(
-                    hintText: 'Write a comment...',
+                    hintText: loc.get('write_comment'),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(24),
                     ),
@@ -167,7 +204,7 @@ class PostDetailPage extends StatelessWidget {
               ),
               IconButton(
                 icon: const Icon(Icons.send),
-                onPressed: () {},
+                onPressed: () => _addComment(commentController.text),
               ),
             ],
           ),
@@ -176,7 +213,7 @@ class PostDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildCommentCard(Comment comment) {
+  Widget _buildCommentCard(Comment comment, String localeCode) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Padding(
@@ -188,36 +225,27 @@ class PostDetailPage extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 16,
-                  backgroundColor: Colors.grey[300],
-                  child: Text(
-                    comment.author.substring(0, 1),
-                    style: const TextStyle(color: Colors.black),
-                  ),
+                  backgroundImage: comment.authorImageUrl != null
+                      ? NetworkImage(comment.authorImageUrl!)
+                      : null,
+                  child: comment.authorImageUrl == null
+                      ? Text(comment.authorName.substring(0, 1))
+                      : null,
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  comment.author,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  comment.authorName,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
                 Text(
-                  comment.date,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
+                  comment.timeAgo(localeCode), // الوقت حسب اللغة المختارة
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             Text(comment.content),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: () {},
-              child: const Text('Reply'),
-            ),
           ],
         ),
       ),

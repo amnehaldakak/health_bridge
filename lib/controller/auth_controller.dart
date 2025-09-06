@@ -100,11 +100,12 @@ class AuthController extends StateNotifier<AuthState> {
                 specialization: doctorSpecialization ?? '',
                 certificatePath: doctorCertificatePath ?? '',
                 verificationStatus: doctorVerificationStatus ?? '',
-                createdAt: doctorCreatedAt ?? '',
-                updatedAt: doctorUpdatedAt ?? '',
+                createdAt: DateTime.tryParse(doctorCreatedAt ?? ''),
+                updatedAt: DateTime.tryParse(
+                    doctorUpdatedAt ?? ''), // يجب أن يكون DateTime? وليس String
                 clinicAddress: doctorClinicAddress ?? '',
                 clinicPhone: doctorClinicPhone ?? '',
-                rejectionReason: doctorRejectionReason,
+                rejectionReason: doctorRejectionReason, // يمكن أن يكون null
               );
             }
           } else if (userRole == 'patient') {
@@ -184,7 +185,8 @@ class AuthController extends StateNotifier<AuthState> {
         final token = response['token'].toString();
         await prefs.setString('token', token);
 
-        if (response['user'] == null || response['user'] is! Map<String, dynamic>) {
+        if (response['user'] == null ||
+            response['user'] is! Map<String, dynamic>) {
           state = AuthError('بيانات المستخدم غير متوفرة أو غير صحيحة');
           return;
         }
@@ -192,12 +194,31 @@ class AuthController extends StateNotifier<AuthState> {
         final userData = response['user'] as Map<String, dynamic>;
         final user = User.fromJson(userData);
 
+        // بناء رابط الصورة الكامل
+        String profilePictureUrl = '';
+        if (user.role == 'doctor' && response['doctor_image_url'] != null) {
+          profilePictureUrl = response['doctor_image_url'];
+        } else if (user.role == 'patient' &&
+            response['patient_image_url'] != null) {
+          profilePictureUrl = response['patient_image_url'];
+        } else if (userData['profile_picture'] != null &&
+            userData['profile_picture'] != '') {
+          // fallback: بناء الرابط لو لم يرسل السيرفر الرابط الكامل
+          profilePictureUrl =
+              userData['profile_picture'].toString().startsWith('http')
+                  ? userData['profile_picture']
+                  : '$serverLink${userData['profile_picture']}';
+        }
+        user.profilePicture = profilePictureUrl;
+        print(user.profilePicture);
+
+        // حفظ بيانات المستخدم
         await prefs.setInt('user_id', user.id ?? 0);
         await prefs.setString('user_name', user.name);
         await prefs.setString('user_email', user.email);
         await prefs.setString('user_role', user.role ?? '');
         await prefs.setInt('user_isApproved', user.isApproved ?? 0);
-        await prefs.setString('user_profilePicture', user.profilePicture ?? '');
+        await prefs.setString('user_profilePicture', profilePictureUrl);
         await prefs.setString('user_createdAt', user.createdAt ?? '');
         await prefs.setString('user_updatedAt', user.updatedAt ?? '');
 
@@ -208,19 +229,23 @@ class AuthController extends StateNotifier<AuthState> {
           final doctorData = response['doctor'] as Map<String, dynamic>;
           doctor = DoctorModel.fromJson(doctorData);
 
-          await prefs.setInt('doctor_id', doctor.id);
-          await prefs.setInt('doctor_userId', doctor.userId);
+          await prefs.setInt('doctor_id', doctor.id ?? 0);
+          await prefs.setInt('doctor_userId', doctor.userId ?? 0);
           await prefs.setString(
               'doctor_specialization', doctor.specialization ?? '');
           await prefs.setString(
               'doctor_certificatePath', doctor.certificatePath ?? '');
           await prefs.setString(
-              'doctor_verificationStatus', doctor.verificationStatus);
-          await prefs.setString('doctor_createdAt', doctor.createdAt);
-          await prefs.setString('doctor_updatedAt', doctor.updatedAt);
-          await prefs.setString('doctor_clinicAddress', doctor.clinicAddress ?? '');
+              'doctor_verificationStatus', doctor.verificationStatus ?? '');
+          await prefs.setString(
+              'doctor_createdAt', doctor.createdAt.toString());
+          await prefs.setString(
+              'doctor_updatedAt', doctor.updatedAt.toString());
+          await prefs.setString(
+              'doctor_clinicAddress', doctor.clinicAddress ?? '');
           await prefs.setString('doctor_clinicPhone', doctor.clinicPhone ?? '');
-          await prefs.setString('doctor_rejectionReason', doctor.rejectionReason ?? '');
+          await prefs.setString(
+              'doctor_rejectionReason', doctor.rejectionReason ?? '');
         } else if (user.role == 'patient' && response['patient'] != null) {
           final patientData = response['patient'] as Map<String, dynamic>;
           patient = PatientModel.fromLoginResponse(patientData, userData);
@@ -230,7 +255,8 @@ class AuthController extends StateNotifier<AuthState> {
           await prefs.setString('patient_birthDate', patient.birthDate);
           await prefs.setString('patient_gender', patient.gender);
           await prefs.setString('patient_phone', patient.phone);
-          await prefs.setString('patient_chronicDiseases', patient.chronicDiseases);
+          await prefs.setString(
+              'patient_chronicDiseases', patient.chronicDiseases);
           await prefs.setString('patient_createdAt', patient.createdAt);
           await prefs.setString('patient_updatedAt', patient.updatedAt);
         }
@@ -242,8 +268,9 @@ class AuthController extends StateNotifier<AuthState> {
           token: token,
         );
       } else {
-        final errorMessage =
-            response['message'] ?? response['error'] ?? 'حدث خطأ أثناء تسجيل الدخول';
+        final errorMessage = response['message'] ??
+            response['error'] ??
+            'حدث خطأ أثناء تسجيل الدخول';
         state = AuthError(errorMessage);
       }
     } catch (e) {

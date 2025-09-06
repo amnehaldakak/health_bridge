@@ -7,7 +7,7 @@ class User {
   final String? password;
   final String? passwordConfirmation;
   final File? profileImage;
-  final String? profilePicture;
+  String? profilePicture;
   final String role;
   final int? isApproved;
   final String? emailVerifiedAt;
@@ -32,22 +32,14 @@ class User {
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['id'] as int?,
-      name: (json['name'] ?? '') as String, // safe default
-      email: (json['email'] ?? '') as String, // safe default
-
-      // بعض الـ responses ما بيرجع email_verified_at
+      name: (json['name'] ?? '') as String,
+      email: (json['email'] ?? '') as String,
       emailVerifiedAt: json['email_verified_at'] as String?,
-
-      // ✅ إذا ما رجع role من السيرفر، نخلي default "patient"
       role: (json['role'] ?? 'patient') as String,
-
-      // ✅ is_approved ممكن يجي bool أو int أو null
       isApproved: json['is_approved'] is bool
           ? ((json['is_approved'] as bool) ? 1 : 0)
           : (json['is_approved'] as int?),
-
       profilePicture: json['profile_picture'] as String?,
-
       createdAt: json['created_at']?.toString(),
       updatedAt: json['updated_at']?.toString(),
     );
@@ -67,5 +59,36 @@ class User {
       'created_at': createdAt,
       'updated_at': updatedAt,
     };
+  }
+
+  /// دالة copyWith لتعديل أي حقل بدون التأثير على الباقي
+  User copyWith({
+    int? id,
+    String? name,
+    String? email,
+    String? password,
+    String? passwordConfirmation,
+    File? profileImage,
+    String? profilePicture,
+    String? role,
+    int? isApproved,
+    String? emailVerifiedAt,
+    String? createdAt,
+    String? updatedAt,
+  }) {
+    return User(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      password: password ?? this.password,
+      passwordConfirmation: passwordConfirmation ?? this.passwordConfirmation,
+      profileImage: profileImage ?? this.profileImage,
+      profilePicture: profilePicture ?? this.profilePicture,
+      role: role ?? this.role,
+      isApproved: isApproved ?? this.isApproved,
+      emailVerifiedAt: emailVerifiedAt ?? this.emailVerifiedAt,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
   }
 }

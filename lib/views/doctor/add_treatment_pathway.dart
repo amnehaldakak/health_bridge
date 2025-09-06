@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:health_bridge/config/content/buildMedicationItem.dart';
 import 'package:health_bridge/config/content/build_section_title.dart';
+import 'package:health_bridge/local/app_localizations.dart';
 import 'package:health_bridge/models/medication_time.dart';
 import 'package:health_bridge/providers/auth_provider.dart';
 import 'package:health_bridge/providers/medicine_add_provider.dart';
@@ -42,17 +43,18 @@ class _AddTreatmentPathwayState extends ConsumerState<AddTreatmentPathway> {
 
   void _saveMedicationGroup() async {
     final state = ref.read(treatmentPlanProvider);
+    final loc = AppLocalizations.of(context);
 
     if (state.description.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى إدخال وصف الخطة العلاجية')),
+        SnackBar(content: Text(loc!.get('enter_plan_description'))),
       );
       return;
     }
 
     if (state.medicines.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('لم يتم إضافة أي دواء')),
+        SnackBar(content: Text(loc!.get('no_medications_added'))),
       );
       return;
     }
@@ -79,7 +81,7 @@ class _AddTreatmentPathwayState extends ConsumerState<AddTreatmentPathway> {
 
       if (response.statusCode == 201) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم حفظ الأدوية بنجاح')),
+          SnackBar(content: Text(loc!.get('medications_saved_success'))),
         );
 
         // ✅ تفريغ قائمة الأدوية والوصف بعد الحفظ
@@ -89,12 +91,14 @@ class _AddTreatmentPathwayState extends ConsumerState<AddTreatmentPathway> {
         context.pop(); // الرجوع للصفحة السابقة
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('فشل حفظ الأدوية: ${response.body}')),
+          SnackBar(
+              content: Text(
+                  '${loc!.get('failed_save_medications')}: ${response.body}')),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('حدث خطأ: $e')),
+        SnackBar(content: Text('${loc!.get('error_occurred')}: $e')),
       );
     } finally {
       setState(() => isLoading = false);
@@ -105,10 +109,11 @@ class _AddTreatmentPathwayState extends ConsumerState<AddTreatmentPathway> {
   Widget build(BuildContext context) {
     final treatmentPlan = ref.watch(treatmentPlanProvider);
     final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('إضافة مسار علاجي'),
+        title: Text(loc!.get('add_treatment_pathway')),
         centerTitle: true,
       ),
       body: Directionality(
@@ -118,13 +123,13 @@ class _AddTreatmentPathwayState extends ConsumerState<AddTreatmentPathway> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              buildSectionTitle('وصف الخطة العلاجية', theme),
+              buildSectionTitle(loc.get('treatment_plan_description'), theme),
               const SizedBox(height: 20),
               TextField(
                 controller: treatmentNameController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'أدخل وصف الخطة العلاجية',
+                decoration: InputDecoration(
+                  border: const OutlineInputBorder(),
+                  hintText: loc.get('enter_plan_description_hint'),
                 ),
               ),
               const SizedBox(height: 10),
@@ -138,11 +143,11 @@ class _AddTreatmentPathwayState extends ConsumerState<AddTreatmentPathway> {
                   );
                 },
                 icon: const Icon(Icons.add),
-                label: const Text('إضافة دواء'),
+                label: Text(loc.get('add_medication')),
               ),
               const SizedBox(height: 20),
               if (treatmentPlan.medicines.isNotEmpty) ...[
-                buildSectionTitle('الأدوية المضافة', theme),
+                buildSectionTitle(loc.get('added_medications'), theme),
                 const SizedBox(height: 10),
                 ListView.separated(
                   shrinkWrap: true,
@@ -161,7 +166,7 @@ class _AddTreatmentPathwayState extends ConsumerState<AddTreatmentPathway> {
                   },
                 ),
               ] else ...[
-                const Text('لم يتم إضافة أي دواء بعد'),
+                Text(loc.get('no_medications_yet')),
               ],
               const SizedBox(height: 30),
               ElevatedButton(
@@ -172,7 +177,7 @@ class _AddTreatmentPathwayState extends ConsumerState<AddTreatmentPathway> {
                 ),
                 child: isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('حفظ المسار العلاجي'),
+                    : Text(loc.get('save_treatment_pathway')),
               ),
             ],
           ),

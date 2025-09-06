@@ -34,13 +34,12 @@ class ProfilePage extends ConsumerWidget {
           // بناء رابط الصورة بشكل صحيح
           String? imageUrl;
           if (user.profilePicture != null && user.profilePicture!.isNotEmpty) {
-            // إصلاح بناء الرابط
             if (user.profilePicture!.startsWith('http')) {
               imageUrl = user.profilePicture;
             } else if (user.profilePicture!.startsWith('/')) {
-              imageUrl = '$serverLink2${user.profilePicture!.substring(1)}';
+              imageUrl = '$serverLink${user.profilePicture!.substring(1)}';
             } else {
-              imageUrl = '$serverLink2${user.profilePicture}';
+              imageUrl = '$serverLink${user.profilePicture}';
             }
           }
 
@@ -48,8 +47,7 @@ class ProfilePage extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                // استخدام CachedNetworkImage لعرض الصورة
-                _buildProfileImage(imageUrl, context),
+                _buildProfileImage(imageUrl),
                 const SizedBox(height: 12),
                 Text(user.name ?? '-',
                     style: Theme.of(context).textTheme.titleLarge),
@@ -175,8 +173,8 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  // دالة مساعدة لعرض صورة البروفايل
-  Widget _buildProfileImage(String? imageUrl, BuildContext context) {
+  // دالة لعرض صورة البروفايل بشكل صحيح
+  Widget _buildProfileImage(String? imageUrl) {
     if (imageUrl != null && imageUrl.isNotEmpty) {
       return CachedNetworkImage(
         imageUrl: imageUrl,
@@ -197,10 +195,10 @@ class ProfilePage extends ConsumerWidget {
         ),
       );
     } else {
-      return CircleAvatar(
+      return const CircleAvatar(
         radius: 50,
-        backgroundColor: Colors.grey[300],
-        backgroundImage: const AssetImage("assets/images/avatar.png"),
+        backgroundColor: Colors.grey,
+        backgroundImage: AssetImage("assets/images/avatar.png"),
       );
     }
   }

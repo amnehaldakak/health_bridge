@@ -52,6 +52,9 @@ dependencies:
   flutter_localization: ^0.3.3
   intl: ^0.19.0
   cached_network_image: ^3.4.1
+  google_fonts: ^6.3.0
+  timeago: ^3.6.0
+
 
 
 
@@ -89,6 +92,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/profile.jpg
+    - assets/community.jpg
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

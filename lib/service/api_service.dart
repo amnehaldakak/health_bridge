@@ -792,4 +792,221 @@ class ApiService {
           "Failed to load medication group: ${response.statusCode}");
     }
   }
+
+  Future<Map<String, dynamic>> createCommunity({
+    required String name,
+    String? description,
+    required String type,
+    String? specialization,
+    String? imagePath,
+  }) async {
+    var uri = Uri.parse('$serverLink$createCommunityLink');
+
+    var request = http.MultipartRequest("POST", uri);
+    request.headers.addAll(headers);
+
+    request.fields['name'] = name;
+    request.fields['type'] = type;
+    if (description != null) request.fields['description'] = description;
+    if (specialization != null)
+      request.fields['specialization'] = specialization;
+
+    if (imagePath != null) {
+      request.files.add(await http.MultipartFile.fromPath('image', imagePath));
+    }
+
+    var streamedResponse = await request.send();
+    var response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception("Failed to create community: ${response.body}");
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getAllCommunities() async {
+    final uri = Uri.parse('$serverLink$getAllCommunitiesLink');
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return List<Map<String, dynamic>>.from(data['communities']);
+    } else {
+      throw Exception('Failed to fetch communities: ${response.body}');
+    }
+  }
+
+  Future<Map<String, dynamic>> updateCommunity({
+    required String id,
+    String? name,
+    String? description,
+    String? type,
+    String? specialization,
+    String? imagePath,
+  }) async {
+    final uri = Uri.parse('$serverLink$updateCommunityLink/$id');
+    final request = http.MultipartRequest('POST', uri);
+
+    // 🟢 إضافة الهيدرز (تأكد أنك معرف التوكن عندك)
+    request.headers.addAll(headers);
+
+    // 🟢 الحقول النصية
+    if (name != null) request.fields['name'] = name;
+    if (description != null) request.fields['description'] = description;
+    if (type != null) request.fields['type'] = type;
+    if (specialization != null) {
+      request.fields['specialization'] = specialization;
+    }
+
+    // 🟢 إضافة الصورة إذا موجودة
+    if (imagePath != null && imagePath.isNotEmpty) {
+      request.files.add(
+        await http.MultipartFile.fromPath('image', imagePath),
+      );
+    }
+
+    print("📤 بيانات مرفوعة: ${request.fields}");
+
+    // 🟢 إرسال الطلب
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    print("📥 الاستجابة: ${response.body}");
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('فشل تحديث المجتمع: ${response.body}');
+    }
+  }
+
+  Future<Map<String, dynamic>> joinCommunity(String id) async {
+    final uri = Uri.parse('$serverLink$joinCommunityLink/$id');
+
+    final response = await http.get(
+      uri,
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('فشل الانضمام إلى المجتمع: ${response.body}');
+    }
+  }
+
+  // 🟢 إنشاء منشور جديد في مجتمع
+
+  Future<Map<String, dynamic>> createPost({
+    required String communityId,
+    required String title,
+    required String content,
+  }) async {
+    final uri = Uri.parse('$serverLink$addPostLink/$communityId');
+
+    final response = await http.post(
+      uri,
+      headers: headers,
+      body: jsonEncode({
+        'title': title,
+        'contente': content, // 🟢 مثل ما الباك إند متوقع
+      }),
+    );
+
+    print("🔵 statusCode: ${response.statusCode}");
+    print("📥 responseBody: ${response.body}");
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('فشل إنشاء المنشور: ${response.body}');
+    }
+  }
+
+  // 🟢 جلب تفاصيل المجتمع مع المنشورات
+  Future<Map<String, dynamic>> getCommunityDetails(String communityId) async {
+    final uri = Uri.parse('$serverLink$getCommunityDetailsLink/$communityId');
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('فشل جلب تفاصيل المجتمع: ${response.body}');
+    }
+  }
+
+  Future<Map<String, dynamic>> getPostWithComments(String postId) async {
+    final uri = Uri.parse('$serverLink$getPostWithCommentsLink/$postId');
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('فشل جلب المنشور: ${response.body}');
+    }
+  }
+
+  Future<Map<String, dynamic>> addComment({
+    required String postId,
+    required String content,
+  }) async {
+    final uri = Uri.parse('$serverLink$addCommentLink/$postId');
+    final response = await http.post(
+      uri,
+      headers: headers,
+      body: jsonEncode({'contente': content}), // لاحظ الاسم 'contente'
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('فشل إضافة التعليق: ${response.body}');
+    }
+  }
+
+  Future<Map<String, dynamic>> shareMedicalCase({
+    required int caseId,
+    required int communityId,
+    required String title,
+    required String content,
+    required bool includeTreatmentPlan,
+  }) async {
+    final url =
+        Uri.parse("$serverLink$shareMedicalCaseLink/$caseId/$communityId");
+
+    final response = await http.post(
+      url,
+      headers: headers,
+      body: jsonEncode({
+        "title": title,
+        "contente": content,
+        "include_treatment_plan": includeTreatmentPlan,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception("فشل في مشاركة الحالة: ${response.body}");
+    }
+  }
+
+  /// 🟢 جلب تفاصيل حالة معينة
+  Future<Case?> getCaseDetails(int caseId) async {
+    try {
+      final url = Uri.parse('$serverLink$showLink/$caseId');
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        return Case.fromJson(data);
+      } else {
+        print('Error: ${response.statusCode} ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      print('Error fetching case details: $e');
+    }
+    return null;
+  }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:health_bridge/config/content/patient_card.dart';
+import 'package:health_bridge/local/app_localizations.dart';
 import 'package:health_bridge/models/case.dart';
 import 'package:health_bridge/models/patient.dart';
 import 'package:health_bridge/providers/auth_provider.dart';
@@ -17,8 +18,15 @@ class PatientCasesPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final casesAsync = ref.watch(patientCasesProvider(patient));
     final String role = ref.watch(currentUserProvider)!.role;
+    final loc = AppLocalizations.of(context);
 
     return Scaffold(
+      appBar: role == "patient"
+          ? AppBar(
+              title: Text(loc!.get('my_cases')),
+              centerTitle: true,
+            )
+          : null,
       body: RefreshIndicator(
         onRefresh: () async {
           await ref.read(patientCasesProvider(patient).notifier).refreshCases();
@@ -34,7 +42,7 @@ class PatientCasesPage extends ConsumerWidget {
                 flexibleSpace: FlexibleSpaceBar(
                   title: role == "doctor"
                       ? Text(patient.user.name)
-                      : const Text("معلومات المريض"),
+                      : Text(loc!.get('patient_info')),
                   background: Container(
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
@@ -64,12 +72,30 @@ class PatientCasesPage extends ConsumerWidget {
                   : const SizedBox.shrink(),
             ),
 
+            /// 🔹 عنوان قسم الحالات
+            SliverToBoxAdapter(
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Text(
+                  role == "patient"
+                      ? loc!.get('my_cases')
+                      : loc!.get('patient_cases'),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                  ),
+                ),
+              ),
+            ),
+
             /// 🔹 عرض سجل الحالات
             casesAsync.when(
               data: (cases) {
                 if (cases.isEmpty) {
-                  return const SliverFillRemaining(
-                    child: Center(child: Text("لا يوجد حالات")),
+                  return SliverFillRemaining(
+                    child: Center(child: Text(loc!.get('no_cases'))),
                   );
                 }
                 return SliverList(
@@ -92,12 +118,12 @@ class PatientCasesPage extends ConsumerWidget {
                             ),
                           ),
                           title: Text(
-                            caseItem.diagnosis ?? "غير محدد",
+                            caseItem.diagnosis ?? loc!.get('not_specified'),
                             style: const TextStyle(
                                 fontWeight: FontWeight.bold, color: blue3),
                           ),
                           subtitle: Text(
-                            "تم التحديث: ${caseItem.updatedAt?.split("T").first ?? "غير معروف"}",
+                            "${loc.get('updated_at')}: ${caseItem.updatedAt?.split("T").first ?? loc.get('unknown')}",
                             style: const TextStyle(color: Colors.blueGrey),
                           ),
                           trailing: Icon(Icons.arrow_forward_ios,
@@ -114,8 +140,8 @@ class PatientCasesPage extends ConsumerWidget {
               },
               loading: () => const SliverFillRemaining(
                   child: Center(child: CircularProgressIndicator())),
-              error: (err, _) =>
-                  SliverFillRemaining(child: Center(child: Text("خطأ: $err"))),
+              error: (err, _) => SliverFillRemaining(
+                  child: Center(child: Text("${loc!.get('error')}: $err"))),
             ),
           ],
         ),

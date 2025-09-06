@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:health_bridge/config/content/buildMedicationItem.dart';
 import 'package:health_bridge/constant/color.dart';
+import 'package:health_bridge/local/app_localizations.dart';
 import 'package:health_bridge/models/medication_time.dart';
 import 'package:health_bridge/models/medication_group.dart';
 import 'package:health_bridge/models/treatment_plan.dart';
@@ -19,12 +20,14 @@ class TreatmentPathway extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final role = ref.watch(currentUserProvider)?.role ?? '';
+    final loc = AppLocalizations.of(context);
 
     final medicationGroupAsync = ref.watch(medicationGroupProvider(caseId));
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('المسار العلاجي', style: TextStyle(fontSize: 20)),
+        title:
+            Text(loc!.get('treatment_pathway'), style: TextStyle(fontSize: 20)),
         centerTitle: true,
       ),
       floatingActionButton: role == "doctor"
@@ -45,7 +48,7 @@ class TreatmentPathway extends ConsumerWidget {
           // تحويل بيانات المسار العلاجي إلى قائمة TreatmentPlan واحدة
           final treatmentPlans = [
             TreatmentPlan(
-              name: "الخطة العلاجية",
+              name: loc.get('treatment_plan'),
               description: group.description,
               medications: group.medications,
             ),
@@ -58,26 +61,28 @@ class TreatmentPathway extends ConsumerWidget {
               itemCount: treatmentPlans.length,
               itemBuilder: (context, index) {
                 final plan = treatmentPlans[index];
-                return _buildTreatmentPlanCard(theme, plan, index, role, ref);
+                return _buildTreatmentPlanCard(
+                    theme, plan, index, role, ref, loc);
               },
             ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('حدث خطأ: $e')),
+        error: (e, _) =>
+            Center(child: Text('${loc.get('error_occurred')}: $e')),
       ),
     );
   }
 
   Widget _buildTreatmentPlanCard(ThemeData theme, TreatmentPlan plan, int index,
-      String role, WidgetRef ref) {
+      String role, WidgetRef ref, AppLocalizations loc) {
     void _editTreatmentPlan() async {
       String input = plan.description;
       final newPlan = await showDialog<String>(
         context: ref.context,
         builder: (context) {
           return AlertDialog(
-            title: Text('تعديل ${plan.name}'),
+            title: Text('${loc.get('edit')} ${plan.name}'),
             content: TextField(
               onChanged: (value) => input = value,
               controller: TextEditingController(text: input),
@@ -86,11 +91,11 @@ class TreatmentPathway extends ConsumerWidget {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('إلغاء'),
+                child: Text(loc.get('cancel')),
               ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context, input),
-                child: const Text('حفظ'),
+                child: Text(loc.get('save')),
               ),
             ],
           );
@@ -111,18 +116,18 @@ class TreatmentPathway extends ConsumerWidget {
         context: ref.context,
         builder: (context) {
           return AlertDialog(
-            title: Text('تعديل ${medication.name}'),
+            title: Text('${loc.get('edit')} ${medication.name}'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
-                  decoration: const InputDecoration(labelText: 'الجرعة'),
+                  decoration: InputDecoration(labelText: loc.get('dosage')),
                   controller: TextEditingController(text: amount),
                   onChanged: (val) => amount = val,
                 ),
                 TextField(
                   decoration:
-                      const InputDecoration(labelText: 'مرات الاستخدام يومياً'),
+                      InputDecoration(labelText: loc.get('daily_usage_times')),
                   keyboardType: TextInputType.number,
                   controller:
                       TextEditingController(text: timesPerDay.toString()),
@@ -134,7 +139,7 @@ class TreatmentPathway extends ConsumerWidget {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('إلغاء'),
+                child: Text(loc.get('cancel')),
               ),
               ElevatedButton(
                 onPressed: () {
@@ -143,7 +148,7 @@ class TreatmentPathway extends ConsumerWidget {
                     medication.copyWith(dosage: amount, frequency: timesPerDay),
                   );
                 },
-                child: const Text('حفظ'),
+                child: Text(loc.get('save')),
               ),
             ],
           );

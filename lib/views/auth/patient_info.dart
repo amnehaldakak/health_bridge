@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:health_bridge/constant/link.dart';
+import 'package:health_bridge/local/app_localizations.dart';
 import 'package:health_bridge/models/user.dart';
 import 'package:health_bridge/service/api_service.dart';
 import 'package:intl/intl.dart';
@@ -33,34 +34,35 @@ class _PatientInfoPageState extends State<PatientInfoPage> {
   }
 
   // Validators
-  String? _birthValidator(String? v) {
-    if (v == null || v.isEmpty) return "الرجاء إدخال تاريخ الميلاد";
+  String? _birthValidator(String? v, AppLocalizations loc) {
+    if (v == null || v.isEmpty) return loc.get('enter_birth_date');
     try {
       DateFormat("yyyy-MM-dd").parse(v);
     } catch (_) {
-      return "صيغة التاريخ غير صحيحة (yyyy-MM-dd)";
+      return loc.get('invalid_date_format');
     }
     return null;
   }
 
-  String? _genderValidator(String? v) {
-    if (v == null || v.isEmpty) return "الرجاء اختيار الجنس";
+  String? _genderValidator(String? v, AppLocalizations loc) {
+    if (v == null || v.isEmpty) return loc.get('select_gender');
     return null;
   }
 
-  String? _phoneValidator(String? v) {
-    if (v == null || v.isEmpty) return "الرجاء إدخال رقم الهاتف";
-    if (!RegExp(r'^[0-9]{8,15}$').hasMatch(v)) return "أدخل رقم هاتف صحيح";
+  String? _phoneValidator(String? v, AppLocalizations loc) {
+    if (v == null || v.isEmpty) return loc.get('enter_phone');
+    if (!RegExp(r'^[0-9]{8,15}$').hasMatch(v)) return loc.get('invalid_phone');
     return null;
   }
 
-  String? _chronicValidator(String? v) {
-    if (v == null || v.isEmpty)
-      return "الرجاء إدخال الأمراض المزمنة أو كتابة لا يوجد";
+  String? _chronicValidator(String? v, AppLocalizations loc) {
+    if (v == null || v.isEmpty) return loc.get('enter_chronic_diseases');
     return null;
   }
 
   void _submit() async {
+    final loc = AppLocalizations.of(context);
+
     if (!_formKey.currentState!.validate()) return;
 
     try {
@@ -78,24 +80,26 @@ class _PatientInfoPageState extends State<PatientInfoPage> {
       print(response.statusCode);
       if (response.statusCode == 201) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text(" تم تسجيل المريض بنجاح الرجاء تسجيل الدخول")),
+          SnackBar(content: Text(loc!.get('patient_registered_success'))),
         );
         context.goNamed('login');
       } else {
         final respStr = await response.stream.bytesToString();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("❌ فشل التسجيل: $respStr")),
+          SnackBar(
+              content: Text("${loc!.get('registration_failed')}: $respStr")),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("حدث خطأ: $e")),
+        SnackBar(content: Text("${loc!.get('error_occurred')}: $e")),
       );
     }
   }
 
   Future<void> _pickDate() async {
+    final loc = AppLocalizations.of(context);
+
     try {
       DateTime initialDate =
           DateTime.tryParse(_birthDateCtrl.text) ?? DateTime(2000, 1, 1);
@@ -104,7 +108,7 @@ class _PatientInfoPageState extends State<PatientInfoPage> {
         initialDate: initialDate,
         firstDate: DateTime(1900),
         lastDate: DateTime.now(),
-        locale: const Locale("en", "US"), // اللغة العربية
+        locale: Locale(loc!.locale.languageCode), // استخدام لغة التطبيق
       );
 
       if (picked != null) {
@@ -114,15 +118,17 @@ class _PatientInfoPageState extends State<PatientInfoPage> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("خطأ في اختيار التاريخ: $e")),
+        SnackBar(content: Text("${loc!.get('date_selection_error')}: $e")),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text("معلومات المريض")),
+      appBar: AppBar(title: Text(loc!.get('patient_info'))),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -138,7 +144,7 @@ class _PatientInfoPageState extends State<PatientInfoPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      "الرجاء إدخال معلوماتك",
+                      loc.get('enter_your_info'),
                       style: Theme.of(context).textTheme.titleLarge,
                       textAlign: TextAlign.center,
                     ),
@@ -149,36 +155,36 @@ class _PatientInfoPageState extends State<PatientInfoPage> {
                       controller: _birthDateCtrl,
                       readOnly: true,
                       decoration: InputDecoration(
-                        labelText: "تاريخ الميلاد",
+                        labelText: loc.get('birth_date'),
                         prefixIcon: const Icon(Icons.calendar_today),
                         suffixIcon: IconButton(
                           icon: const Icon(Icons.date_range),
                           onPressed: _pickDate,
                         ),
                       ),
-                      validator: _birthValidator,
+                      validator: (v) => _birthValidator(v, loc),
                     ),
                     const SizedBox(height: 16),
 
                     // الجنس
                     DropdownButtonFormField<String>(
                       value: _selectedGender,
-                      decoration: const InputDecoration(
-                        labelText: "الجنس",
-                        prefixIcon: Icon(Icons.person),
+                      decoration: InputDecoration(
+                        labelText: loc.get('gender'),
+                        prefixIcon: const Icon(Icons.person),
                       ),
-                      items: const [
+                      items: [
                         DropdownMenuItem(
-                          value: "ذكر",
-                          child: Text("ذكر"),
+                          value: "male",
+                          child: Text(loc.get('male')),
                         ),
                         DropdownMenuItem(
-                          value: "أنثى",
-                          child: Text("أنثى"),
+                          value: "female",
+                          child: Text(loc.get('female')),
                         ),
                       ],
                       onChanged: (val) => setState(() => _selectedGender = val),
-                      validator: _genderValidator,
+                      validator: (v) => _genderValidator(v, loc),
                     ),
                     const SizedBox(height: 16),
 
@@ -186,29 +192,29 @@ class _PatientInfoPageState extends State<PatientInfoPage> {
                     TextFormField(
                       controller: _phoneCtrl,
                       keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(
-                        labelText: "رقم الهاتف",
-                        prefixIcon: Icon(Icons.phone),
+                      decoration: InputDecoration(
+                        labelText: loc.get('phone_number'),
+                        prefixIcon: const Icon(Icons.phone),
                       ),
-                      validator: _phoneValidator,
+                      validator: (v) => _phoneValidator(v, loc),
                     ),
                     const SizedBox(height: 16),
 
                     // الأمراض المزمنة
                     TextFormField(
                       controller: _chronicCtrl,
-                      decoration: const InputDecoration(
-                        labelText: "الأمراض المزمنة",
-                        hintText: "مثال: السكري, الضغط",
-                        prefixIcon: Icon(Icons.medical_services),
+                      decoration: InputDecoration(
+                        labelText: loc.get('chronic_diseases'),
+                        hintText: loc.get('chronic_diseases_example'),
+                        prefixIcon: const Icon(Icons.medical_services),
                       ),
-                      validator: _chronicValidator,
+                      validator: (v) => _chronicValidator(v, loc),
                     ),
                     const SizedBox(height: 24),
 
                     ElevatedButton(
                       onPressed: _submit,
-                      child: const Text("حفظ البيانات"),
+                      child: Text(loc.get('save_data')),
                     ),
                   ],
                 ),

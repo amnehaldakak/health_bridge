@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:health_bridge/constant/color.dart';
+import 'package:health_bridge/local/app_localizations.dart';
 import 'package:health_bridge/models/patient.dart';
 import 'package:health_bridge/providers/records_doctor_provider.dart';
 
@@ -13,6 +14,7 @@ class RecordsDoctor extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final patientsAsync = ref.watch(doctorPatientsProvider);
     final patientsController = ref.read(doctorPatientsProvider.notifier);
+    final loc = AppLocalizations.of(context);
 
     return Scaffold(
       floatingActionButton: FloatingActionButton(
@@ -30,9 +32,9 @@ class RecordsDoctor extends ConsumerWidget {
             return RefreshIndicator(
               onRefresh: patientsController.refreshPatients,
               child: ListView(
-                children: const [
-                  SizedBox(height: 100),
-                  Center(child: Text("لا يوجد مرضى")),
+                children: [
+                  const SizedBox(height: 100),
+                  Center(child: Text(loc!.get('no_patients'))),
                 ],
               ),
             );
@@ -83,12 +85,17 @@ class RecordsDoctor extends ConsumerWidget {
                           ),
                           const SizedBox(width: 16),
                           Expanded(
-                            child: Text(
-                              patient.user.name,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  patient.user.name,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                              ],
                             ),
                           ),
                           Icon(
@@ -114,7 +121,7 @@ class RecordsDoctor extends ConsumerWidget {
           child: ListView(
             children: [
               const SizedBox(height: 100),
-              Center(child: Text("خطأ: $err")),
+              Center(child: Text("${loc!.get('error')}: $err")),
             ],
           ),
         ),

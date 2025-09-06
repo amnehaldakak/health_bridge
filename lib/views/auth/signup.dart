@@ -1,7 +1,7 @@
-// ---------------- صفحة إنشاء حساب -----------------
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:health_bridge/local/app_localizations.dart';
 import 'package:health_bridge/models/user.dart';
 import 'package:health_bridge/views/auth/doctor_info.dart';
 import 'package:health_bridge/views/auth/login.dart';
@@ -38,31 +38,31 @@ class _SignUpPageState extends State<SignUpPage> {
     super.dispose();
   }
 
-  String? _nameValidator(String? v) {
-    if (v == null || v.trim().length < 2) return 'أدخل اسماً صحيحاً';
+  String? _nameValidator(String? v, AppLocalizations loc) {
+    if (v == null || v.trim().length < 2) return loc.get('enter_valid_name');
     return null;
   }
 
-  String? _emailValidator(String? v) {
-    if (v == null || v.trim().isEmpty) return 'أدخل البريد الإلكتروني';
+  String? _emailValidator(String? v, AppLocalizations loc) {
+    if (v == null || v.trim().isEmpty) return loc.get('enter_email');
     final regex = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$');
-    if (!regex.hasMatch(v.trim())) return 'البريد غير صالح';
+    if (!regex.hasMatch(v.trim())) return loc.get('invalid_email');
     return null;
   }
 
-  String? _passwordValidator(String? v) {
-    if (v == null || v.isEmpty) return 'أدخل كلمة المرور';
-    if (v.length < 8) return 'كلمة المرور يجب أن تكون 8 أحرف على الأقل';
+  String? _passwordValidator(String? v, AppLocalizations loc) {
+    if (v == null || v.isEmpty) return loc.get('enter_password');
+    if (v.length < 8) return loc.get('password_min_length');
     return null;
   }
 
-  String? _confirmValidator(String? v) {
-    if (v != _passwordCtrl.text) return 'كلمة المرور غير متطابقة';
+  String? _confirmValidator(String? v, AppLocalizations loc) {
+    if (v != _passwordCtrl.text) return loc.get('password_mismatch');
     return null;
   }
 
-  String? _roleValidator(String? v) {
-    if (v == null || v.isEmpty) return 'اختر الدور';
+  String? _roleValidator(String? v, AppLocalizations loc) {
+    if (v == null || v.isEmpty) return loc.get('select_role');
     return null;
   }
 
@@ -86,7 +86,7 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
 
-  void _showImagePickerOptions(BuildContext context) {
+  void _showImagePickerOptions(BuildContext context, AppLocalizations loc) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -97,7 +97,7 @@ class _SignUpPageState extends State<SignUpPage> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo_library),
-              title: const Text("اختر من المعرض"),
+              title: Text(loc.get('choose_from_gallery')),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage();
@@ -105,7 +105,7 @@ class _SignUpPageState extends State<SignUpPage> {
             ),
             ListTile(
               leading: const Icon(Icons.camera_alt),
-              title: const Text("التقط صورة"),
+              title: Text(loc.get('take_photo')),
               onTap: () {
                 Navigator.pop(context);
                 _takePhoto();
@@ -118,11 +118,13 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   void _submit() async {
+    final loc = AppLocalizations.of(context);
+
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedRole == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى اختيار الدور')),
+        SnackBar(content: Text(loc!.get('select_role'))),
       );
       return;
     }
@@ -161,13 +163,15 @@ class _SignUpPageState extends State<SignUpPage> {
     } catch (e) {
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('حدث خطأ أثناء إنشاء الحساب: $e')),
+        SnackBar(content: Text('${loc!.get('account_creation_error')}: $e')),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+
     return Scaffold(
       body: Center(
         child: SingleChildScrollView(
@@ -186,7 +190,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      "إنشاء حساب",
+                      loc!.get('create_account'),
                       style: Theme.of(context).textTheme.titleLarge,
                       textAlign: TextAlign.center,
                     ),
@@ -200,13 +204,15 @@ class _SignUpPageState extends State<SignUpPage> {
                             radius: 60,
                             backgroundImage: _profileImage != null
                                 ? FileImage(_profileImage!)
-                                : const AssetImage('assets/profile.jpg'),
+                                : const AssetImage('assets/profile.jpg')
+                                    as ImageProvider,
                           ),
                           Positioned(
                             bottom: 0,
                             right: 4,
                             child: GestureDetector(
-                              onTap: () => _showImagePickerOptions(context),
+                              onTap: () =>
+                                  _showImagePickerOptions(context, loc),
                               child: Container(
                                 padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
@@ -230,21 +236,21 @@ class _SignUpPageState extends State<SignUpPage> {
 
                     TextFormField(
                       controller: _nameCtrl,
-                      decoration: const InputDecoration(
-                        labelText: "الاسم الكامل",
-                        prefixIcon: Icon(Icons.person),
+                      decoration: InputDecoration(
+                        labelText: loc.get('full_name'),
+                        prefixIcon: const Icon(Icons.person),
                       ),
-                      validator: _nameValidator,
+                      validator: (v) => _nameValidator(v, loc),
                     ),
                     const SizedBox(height: 16),
 
                     TextFormField(
                       controller: _emailCtrl,
-                      decoration: const InputDecoration(
-                        labelText: "البريد الإلكتروني",
-                        prefixIcon: Icon(Icons.email),
+                      decoration: InputDecoration(
+                        labelText: loc.get('email'),
+                        prefixIcon: const Icon(Icons.email),
                       ),
-                      validator: _emailValidator,
+                      validator: (v) => _emailValidator(v, loc),
                     ),
                     const SizedBox(height: 16),
 
@@ -252,7 +258,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       controller: _passwordCtrl,
                       obscureText: _obscure1,
                       decoration: InputDecoration(
-                        labelText: "كلمة المرور",
+                        labelText: loc.get('password'),
                         prefixIcon: const Icon(Icons.lock),
                         suffixIcon: IconButton(
                           onPressed: () =>
@@ -262,7 +268,7 @@ class _SignUpPageState extends State<SignUpPage> {
                           ),
                         ),
                       ),
-                      validator: _passwordValidator,
+                      validator: (v) => _passwordValidator(v, loc),
                     ),
                     const SizedBox(height: 16),
 
@@ -270,7 +276,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       controller: _confirmCtrl,
                       obscureText: _obscure2,
                       decoration: InputDecoration(
-                        labelText: "تأكيد كلمة المرور",
+                        labelText: loc.get('confirm_password'),
                         prefixIcon: const Icon(Icons.lock_reset),
                         suffixIcon: IconButton(
                           onPressed: () =>
@@ -280,45 +286,45 @@ class _SignUpPageState extends State<SignUpPage> {
                           ),
                         ),
                       ),
-                      validator: _confirmValidator,
+                      validator: (v) => _confirmValidator(v, loc),
                     ),
                     const SizedBox(height: 16),
 
                     DropdownButtonFormField<String>(
                       value: _selectedRole,
-                      decoration: const InputDecoration(
-                        labelText: "الدور",
-                        prefixIcon: Icon(Icons.badge),
+                      decoration: InputDecoration(
+                        labelText: loc.get('role'),
+                        prefixIcon: const Icon(Icons.badge),
                       ),
-                      items: const [
+                      items: [
                         DropdownMenuItem(
                           value: "patient",
-                          child: Text("مريض"),
+                          child: Text(loc.get('patient')),
                         ),
                         DropdownMenuItem(
                           value: "doctor",
-                          child: Text("طبيب"),
+                          child: Text(loc.get('doctor')),
                         ),
                       ],
                       onChanged: (val) => setState(() => _selectedRole = val),
-                      validator: _roleValidator,
+                      validator: (v) => _roleValidator(v, loc),
                     ),
                     const SizedBox(height: 24),
 
                     ElevatedButton(
                       onPressed: _submit,
-                      child: const Text("إنشاء حساب"),
+                      child: Text(loc.get('create_account')),
                     ),
                     const Divider(height: 32),
 
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text("لديك حساب بالفعل؟"),
+                        Text(loc.get('already_have_account')),
                         TextButton(
                           onPressed: () => Navigator.pushReplacementNamed(
                               context, LoginPage.route),
-                          child: const Text("تسجيل الدخول"),
+                          child: Text(loc.get('login')),
                         ),
                       ],
                     ),

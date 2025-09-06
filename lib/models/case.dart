@@ -28,6 +28,7 @@ class Case {
     this.createdAt,
     this.updatedAt,
   });
+
   factory Case.fromJson(Map<String, dynamic> json) {
     return Case(
       id: json['id'],
@@ -75,5 +76,24 @@ class Case {
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
+  }
+
+  /// 🟢 تحويل الكائن إلى خريطة JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'chief_complaint': chiefComplaint,
+      'symptoms': symptoms,
+      'medical_history': medicalHistory,
+      'surgical_history': surgicalHistory,
+      'allergic_history': allergicHistory,
+      'smoking_status': smokingStatus,
+      'signs': signs,
+      'vital_signs': vitalSigns,
+      'clinical_examination_results': clinicalExaminationResults,
+      'diagnosis': diagnosis,
+      'created_at': createdAt,
+      'updated_at': updatedAt,
+    };
   }
 }

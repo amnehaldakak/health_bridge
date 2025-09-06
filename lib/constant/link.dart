@@ -1,5 +1,5 @@
-const String serverLink = 'http://10.196.83.187:8000/api/';
-const String serverLink2 = 'http://192.168.247.187:8000/';
+const String serverLink = 'http://192.168.247.187:8000/api/';
+const String serverLink2 = 'http://192.168.247.187:80/';
 
 const String loginLink = 'login';
 const String registerLink = 'register';
@@ -22,3 +22,13 @@ const String getMedicineLink = 'index';
 const String updateStatusLink = 'updateStatus';
 const String medicationReminderTimesLink = 'medicationReminderTimes';
 const String showMedicationGroupeLink = 'showMedicationGroup';
+const String createCommunityLink = 'createCommunity';
+const String getAllCommunitiesLink = 'getAllCommunities';
+const String updateCommunityLink = 'updateCommunity';
+const String joinCommunityLink = 'joinCommunity';
+const String addPostLink = 'addPost';
+const String getCommunityDetailsLink = 'getCommunityDetails';
+const String getPostWithCommentsLink = 'getPostWithComments';
+const String addCommentLink = 'addComment';
+const String shareMedicalCaseLink = 'shareMedicalCase';
+const String showLink = 'show';

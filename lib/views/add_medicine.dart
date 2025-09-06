@@ -98,7 +98,7 @@ class _AddMedicinePageState extends ConsumerState<AddMedicinePage> {
       }
     } else if (user?.role == 'doctor') {
       // ✅ الطبيب يضيف الدواء للقائمة فقط
-      ref.read(medicineListProvider.notifier).addMedicine(
+      ref.read(treatmentPlanProvider.notifier).addMedicine(
             MedicationTime(
                 name: medicineName.text,
                 dosage: dosageAmount.text,

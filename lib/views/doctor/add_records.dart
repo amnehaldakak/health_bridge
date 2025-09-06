@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:health_bridge/local/app_localizations.dart';
 import 'package:health_bridge/models/patient.dart';
 import 'package:health_bridge/providers/auth_provider.dart';
 import 'package:health_bridge/service/api_service.dart';
@@ -69,8 +70,9 @@ class _AddRecordsState extends ConsumerState<AddRecords> {
       });
     } catch (e) {
       setState(() => loading = false);
+      final loc = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("فشل في جلب المرضى: $e")),
+        SnackBar(content: Text("${loc!.get('failed_load_patients')}: $e")),
       );
     }
   }
@@ -90,9 +92,11 @@ class _AddRecordsState extends ConsumerState<AddRecords> {
   }
 
   void _submit() async {
+    final loc = AppLocalizations.of(context);
+
     if (selectedPatient == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("⚠ يرجى اختيار مريض أولاً")),
+        SnackBar(content: Text(loc!.get('select_patient_first'))),
       );
       return;
     }
@@ -106,7 +110,7 @@ class _AddRecordsState extends ConsumerState<AddRecords> {
         controllers["smoking"]!.text.isEmpty ||
         controllers["diagnosis"]!.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("⚠ يرجى تعبئة جميع الحقول الإلزامية")),
+        SnackBar(content: Text(loc!.get('fill_required_fields'))),
       );
       return;
     }
@@ -119,7 +123,8 @@ class _AddRecordsState extends ConsumerState<AddRecords> {
           children: [
             const CircularProgressIndicator(),
             const SizedBox(width: 10),
-            Text("📤 جاري إرسال البيانات للمريض ${selectedPatient!.user.name}"),
+            Text(
+                "${loc!.get('sending_data_to')} ${selectedPatient!.user.name}"),
           ],
         ),
         duration: const Duration(seconds: 5),
@@ -151,7 +156,7 @@ class _AddRecordsState extends ConsumerState<AddRecords> {
         final patientName = selectedPatient!.user.name;
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("✅ تم إنشاء الحالة بنجاح")),
+          SnackBar(content: Text(loc!.get('case_created_success'))),
         );
         _resetForm();
         setState(() => currentStep = 0);
@@ -168,14 +173,14 @@ class _AddRecordsState extends ConsumerState<AddRecords> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              "❌ خطأ: ${responseBody['message'] ?? 'Unknown error'}",
+              "${loc!.get('error')}: ${responseBody['message'] ?? loc.get('unknown_error')}",
             ),
           ),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("❌ خطأ في الإرسال: $e")),
+        SnackBar(content: Text("${loc!.get('sending_error')}: $e")),
       );
     }
   }
@@ -190,7 +195,8 @@ class _AddRecordsState extends ConsumerState<AddRecords> {
 
   void _onStepContinue() {
     final formKeys = [_storyKey, _examKey, _diagnosisKey];
-    final isLast = currentStep == _steps().length - 1;
+    final isLast =
+        currentStep == _steps(AppLocalizations.of(context)!).length - 1;
 
     if (formKeys[currentStep]!.currentState?.validate() != true) return;
 
@@ -218,11 +224,13 @@ class _AddRecordsState extends ConsumerState<AddRecords> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('الاستمارة الطبية'),
+          title: Text(loc!.get('medical_form')),
           centerTitle: true,
         ),
         body: loading
@@ -234,7 +242,7 @@ class _AddRecordsState extends ConsumerState<AddRecords> {
                     child: TextField(
                       controller: searchController,
                       decoration: InputDecoration(
-                        labelText: "ابحث عن مريض بالاسم أو ID",
+                        labelText: loc.get('search_patient_by_name_id'),
                         prefixIcon: const Icon(Icons.search),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -247,7 +255,7 @@ class _AddRecordsState extends ConsumerState<AddRecords> {
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: DropdownButtonFormField<int>(
                       decoration: InputDecoration(
-                        labelText: "اختر المريض",
+                        labelText: loc.get('select_patient'),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -271,7 +279,7 @@ class _AddRecordsState extends ConsumerState<AddRecords> {
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Text(
-                        "✅ المريض المختار: ${selectedPatient!.user.name} (ID: ${selectedPatient!.id})",
+                        "${loc.get('selected_patient')}: ${selectedPatient!.user.name} (ID: ${selectedPatient!.id})",
                         style: const TextStyle(
                             fontWeight: FontWeight.bold, color: Colors.blue),
                       ),
@@ -282,7 +290,7 @@ class _AddRecordsState extends ConsumerState<AddRecords> {
                       currentStep: currentStep,
                       onStepContinue: _onStepContinue,
                       onStepCancel: _onStepCancel,
-                      steps: _steps(),
+                      steps: _steps(loc), // ✅ تم إضافة loc هنا
                     ),
                   ),
                 ],
@@ -291,69 +299,78 @@ class _AddRecordsState extends ConsumerState<AddRecords> {
     );
   }
 
-  List<Step> _steps() {
+  List<Step> _steps(AppLocalizations loc) {
     return [
       Step(
-        title: const Text('القصة السريرية'),
+        title: Text(loc.get('clinical_history')),
         isActive: currentStep >= 0,
         state: currentStep > 0 ? StepState.complete : StepState.indexed,
         content: Form(
           key: _storyKey,
           child: Column(
             children: [
-              field("الشكاية الرئيسية", controllers["chiefComplaint"]!,
-                  maxLines: 2),
-              field("الأعراض", controllers["symptoms"]!, maxLines: 2),
-              field("السوابق المرضية", controllers["pastMedical"]!,
-                  maxLines: 2),
-              field("السوابق الجراحية", controllers["pastSurgical"]!,
-                  maxLines: 2),
-              field("التحسس", controllers["allergies"]!, maxLines: 1),
-              field("حالة التدخين", controllers["smoking"]!, maxLines: 1),
-              optionalField("السوابق الدوائية", controllers["medications"]!,
-                  maxLines: 2),
+              field(loc.get('main_complaint'), controllers["chiefComplaint"]!,
+                  maxLines: 2, loc: loc),
+              field(loc.get('symptoms'), controllers["symptoms"]!,
+                  maxLines: 2, loc: loc),
+              field(loc.get('medical_history'), controllers["pastMedical"]!,
+                  maxLines: 2, loc: loc),
+              field(loc.get('surgical_history'), controllers["pastSurgical"]!,
+                  maxLines: 2, loc: loc),
+              field(loc.get('allergies'), controllers["allergies"]!,
+                  maxLines: 1, loc: loc),
+              field(loc.get('smoking_status'), controllers["smoking"]!,
+                  maxLines: 1, loc: loc),
+              optionalField(
+                  loc.get('medication_history'), controllers["medications"]!,
+                  maxLines: 2, loc: loc),
               fileUploadField(
-                "صورة Echo (اختياري)",
+                loc.get('echo_image_optional'),
                 _echoFile,
                 (file) => setState(() => _echoFile = file),
+                loc: loc,
               ),
             ],
           ),
         ),
       ),
       Step(
-        title: const Text('الفحص السريري'),
+        title: Text(loc.get('clinical_examination')),
         isActive: currentStep >= 1,
         state: currentStep > 1 ? StepState.complete : StepState.indexed,
         content: Form(
           key: _examKey,
           child: Column(
             children: [
-              optionalField("العلامات", controllers["signs"]!, maxLines: 2),
-              optionalField("العلامات الحيوية", controllers["vitals"]!,
-                  hint: "ضغط، حرارة، نبض...", maxLines: 2),
-              optionalField("نتيجة الفحص السريري", controllers["examResult"]!,
-                  maxLines: 3),
+              optionalField(loc.get('signs'), controllers["signs"]!,
+                  maxLines: 2, loc: loc),
+              optionalField(loc.get('vital_signs'), controllers["vitals"]!,
+                  hint: loc.get('pressure_temp_pulse'), maxLines: 2, loc: loc),
+              optionalField(loc.get('exam_results'), controllers["examResult"]!,
+                  maxLines: 3, loc: loc),
               fileUploadField(
-                "نتيجة فحص المختبر (اختياري)",
+                loc.get('lab_results_optional'),
                 _labTestFile,
                 (file) => setState(() => _labTestFile = file),
+                loc: loc,
               ),
             ],
           ),
         ),
       ),
       Step(
-        title: const Text('التشخيص'),
+        title: Text(loc.get('diagnosis')),
         isActive: currentStep >= 2,
         state: StepState.indexed,
         content: Form(
           key: _diagnosisKey,
           child: Column(
             children: [
-              field("التشخيص", controllers["diagnosis"]!, maxLines: 2),
-              optionalField("خطة العلاج", controllers["medicationPlan"]!,
-                  maxLines: 3),
+              field(loc.get('diagnosis'), controllers["diagnosis"]!,
+                  maxLines: 2, loc: loc),
+              optionalField(
+                  loc.get('treatment_plan'), controllers["medicationPlan"]!,
+                  maxLines: 3, loc: loc),
             ],
           ),
         ),
@@ -362,7 +379,7 @@ class _AddRecordsState extends ConsumerState<AddRecords> {
   }
 
   Widget field(String label, TextEditingController controller,
-      {int maxLines = 1, String? hint}) {
+      {int maxLines = 1, String? hint, required AppLocalizations loc}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: TextFormField(
@@ -382,14 +399,14 @@ class _AddRecordsState extends ConsumerState<AddRecords> {
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         ),
         validator: (value) => (value == null || value.trim().isEmpty)
-            ? 'يرجى تعبئة هذا الحقل'
+            ? loc.get('fill_this_field')
             : null,
       ),
     );
   }
 
   Widget optionalField(String label, TextEditingController controller,
-      {int maxLines = 1, String? hint}) {
+      {int maxLines = 1, String? hint, required AppLocalizations loc}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: TextFormField(
@@ -405,7 +422,8 @@ class _AddRecordsState extends ConsumerState<AddRecords> {
   }
 
   Widget fileUploadField(
-      String label, File? currentFile, Function(File?) onFileSelected) {
+      String label, File? currentFile, Function(File?) onFileSelected,
+      {required AppLocalizations loc}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
@@ -423,7 +441,7 @@ class _AddRecordsState extends ConsumerState<AddRecords> {
                     onFileSelected(File(result.files.single.path!));
                   }
                 },
-                child: const Text("اختر ملف"),
+                child: Text(loc.get('choose_file')),
               ),
               const SizedBox(width: 10),
               if (currentFile != null)

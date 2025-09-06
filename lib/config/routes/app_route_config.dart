@@ -8,6 +8,7 @@ import 'package:health_bridge/views/add_medicine.dart';
 import 'package:health_bridge/views/auth/login.dart';
 import 'package:health_bridge/views/auth/signup.dart';
 import 'package:health_bridge/views/auth/doctor_info.dart';
+import 'package:health_bridge/views/doctor/add_community.dart';
 import 'package:health_bridge/views/doctor/add_treatment_pathway.dart';
 import 'package:health_bridge/views/doctor/doctor.dart';
 import 'package:health_bridge/views/doctor/home_doctor.dart';
@@ -172,6 +173,11 @@ final GoRouter appRouter = GoRouter(
           selectedDate: extra['selectedDate'],
         );
       },
+    ),
+    GoRoute(
+      path: '/add_community',
+      name: 'add_community',
+      pageBuilder: (context, state) => MaterialPage(child: AddCommunity()),
     ),
   ],
   debugLogDiagnostics: true,
