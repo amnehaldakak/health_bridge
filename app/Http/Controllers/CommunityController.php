@@ -110,6 +110,7 @@ class CommunityController extends Controller
         ->map(function($community) {
             $community->is_member = $community->members->isNotEmpty();
             unset($community->members);
+            $community->image = $community->image ? url('storage/' . $community->image) : null;
             return $community;
         });
 

@@ -17,6 +17,7 @@ use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityMemberController;
 use App\Http\Controllers\CommunityPostController;
 use App\Http\Controllers\PostCommentController;
+use App\Http\Controllers\AdminController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -138,6 +139,13 @@ Route::controller(PostCommentController::class)->group(function () {
 
     Route::Post('addComment/{id}','addComment')->middleware('auth:sanctum');
     Route::get('getPostWithComments/{id}','getPostWithComments');
+    
+});
+
+Route::controller(AdminController::class)->group(function () {
+
+    Route::get('getUserCount','getUserCount');
+    Route::get('getCommunityCount','getCommunityCount');
     
 });
 
