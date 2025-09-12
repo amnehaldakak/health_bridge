@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:health_bridge/models/user.dart';
 import 'package:health_bridge/service/api_service.dart';
+import 'package:health_bridge/local/app_localizations.dart';
 
 class DoctorInfoPage extends StatefulWidget {
   static const route = '/doctor-info';
@@ -31,21 +33,23 @@ class _DoctorInfoPageState extends State<DoctorInfoPage> {
   }
 
   // Validators
-  String? _requiredValidator(String? v, String field) {
-    if (v == null || v.isEmpty) return "الرجاء إدخال $field";
-    return null;
-  }
-
-  String? _phoneValidator(String? v) {
-    if (v == null || v.isEmpty) return "الرجاء إدخال رقم العيادة";
-    if (!RegExp(r'^[0-9]{8,15}$').hasMatch(v)) {
-      return "أدخل رقم هاتف صحيح";
+  String? _requiredValidator(String? v, String field, AppLocalizations loc) {
+    if (v == null || v.isEmpty) {
+      return loc.get('enter_field').replaceAll('{0}', field);
     }
     return null;
   }
 
-  String? _certificateValidator() {
-    if (_certificateFile == null) return "الرجاء رفع الشهادة";
+  String? _phoneValidator(String? v, AppLocalizations loc) {
+    if (v == null || v.isEmpty) return loc.get('enter_clinic_phone');
+    if (!RegExp(r'^[0-9]{8,15}$').hasMatch(v)) {
+      return loc.get('invalid_phone');
+    }
+    return null;
+  }
+
+  String? _certificateValidator(AppLocalizations loc) {
+    if (_certificateFile == null) return loc.get('upload_certificate');
     return null;
   }
 
@@ -63,11 +67,12 @@ class _DoctorInfoPageState extends State<DoctorInfoPage> {
     }
   }
 
-  void _submit() async {
+  void _submit(AppLocalizations loc) async {
     if (!_formKey.currentState!.validate() || _certificateFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text("⚠️ يرجى تعبئة جميع الحقول المطلوبة وإرفاق الشهادة")),
+        SnackBar(
+            content:
+                Text(loc.get('fill_required_fields_and_attach_certificate'))),
       );
       return;
     }
@@ -88,123 +93,132 @@ class _DoctorInfoPageState extends State<DoctorInfoPage> {
         clinicAddress: _clinicAddressCtrl.text,
         clinicPhone: _clinicPhoneCtrl.text,
         certificateFile: _certificateFile!,
-        profilePhoto: widget.user.profileImage, // 👈 صورة البروفايل (اختيارية)
+        profilePhoto: widget.user.profileImage,
       );
 
-      Navigator.of(context).pop(); // إغلاق مؤشر التحميل
+      Navigator.of(context).pop(); // close loading indicator
 
       final respStr = await response.stream.bytesToString();
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text(" تم تسجيل الطبيب بنجاح الرجاء تسجيل الدخول")),
+          SnackBar(content: Text(loc.get('doctor_registered_success'))),
         );
-        Navigator.pop(context); // رجوع أو انتقال لصفحة أخرى
+        Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("❌ فشل التسجيل: $respStr")),
+          SnackBar(
+              content: Text("${loc.get('registration_failed')}: $respStr")),
         );
       }
     } catch (e) {
-      Navigator.of(context).pop();
+      context.pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("حدث خطأ: $e")),
+        SnackBar(content: Text("${loc.get('error_occurred')}: $e")),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("معلومات الطبيب")),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Card(
-            elevation: 4,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      "الرجاء إدخال بياناتك المهنية",
-                      style: Theme.of(context).textTheme.titleLarge,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
+    final loc = AppLocalizations.of(context);
 
-                    // التخصص
-                    TextFormField(
-                      controller: _specializationCtrl,
-                      decoration: const InputDecoration(
-                        labelText: "التخصص",
-                        prefixIcon: Icon(Icons.medical_services),
+    return Directionality(
+      textDirection: Localizations.localeOf(context).languageCode == 'ar'
+          ? TextDirection.rtl
+          : TextDirection.ltr,
+      child: Scaffold(
+        appBar: AppBar(title: Text(loc!.get('doctor_info'))),
+        body: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24)),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        loc.get('enter_professional_info'),
+                        style: Theme.of(context).textTheme.titleLarge,
+                        textAlign: TextAlign.center,
                       ),
-                      validator: (v) => _requiredValidator(v, "التخصص"),
-                    ),
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 24),
 
-                    // عنوان العيادة
-                    TextFormField(
-                      controller: _clinicAddressCtrl,
-                      decoration: const InputDecoration(
-                        labelText: "عنوان العيادة",
-                        prefixIcon: Icon(Icons.location_on),
-                      ),
-                      validator: (v) => _requiredValidator(v, "عنوان العيادة"),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // رقم العيادة
-                    TextFormField(
-                      controller: _clinicPhoneCtrl,
-                      keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(
-                        labelText: "رقم العيادة",
-                        prefixIcon: Icon(Icons.phone),
-                      ),
-                      validator: _phoneValidator,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // رفع الشهادة
-                    InkWell(
-                      onTap: _pickCertificate,
-                      child: InputDecorator(
+                      // Specialization
+                      TextFormField(
+                        controller: _specializationCtrl,
                         decoration: InputDecoration(
-                          labelText: "الشهادة (JPG, PNG, PDF)",
-                          prefixIcon: const Icon(Icons.upload_file),
-                          errorText: _certificateValidator(),
+                          labelText: loc.get('specialization'),
+                          prefixIcon: const Icon(Icons.medical_services),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                _certificateFile != null
-                                    ? _certificateFile!.path.split('/').last
-                                    : "اضغط لاختيار ملف",
-                                overflow: TextOverflow.ellipsis,
+                        validator: (v) => _requiredValidator(
+                            v, loc.get('specialization'), loc),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Clinic Address
+                      TextFormField(
+                        controller: _clinicAddressCtrl,
+                        decoration: InputDecoration(
+                          labelText: loc.get('clinic_address'),
+                          prefixIcon: const Icon(Icons.location_on),
+                        ),
+                        validator: (v) => _requiredValidator(
+                            v, loc.get('clinic_address'), loc),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Clinic Phone
+                      TextFormField(
+                        controller: _clinicPhoneCtrl,
+                        keyboardType: TextInputType.phone,
+                        decoration: InputDecoration(
+                          labelText: loc.get('clinic_phone'),
+                          prefixIcon: const Icon(Icons.phone),
+                        ),
+                        validator: (v) => _phoneValidator(v, loc),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Upload Certificate
+                      InkWell(
+                        onTap: _pickCertificate,
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: loc.get('certificate_file'),
+                            prefixIcon: const Icon(Icons.upload_file),
+                            errorText: _certificateValidator(loc),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  _certificateFile != null
+                                      ? _certificateFile!.path.split('/').last
+                                      : loc.get('tap_to_select_file'),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                            ),
-                            const Icon(Icons.attach_file),
-                          ],
+                              const Icon(Icons.attach_file),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    ElevatedButton(
-                      onPressed: _submit,
-                      child: const Text("حفظ البيانات"),
-                    ),
-                  ],
+                      ElevatedButton(
+                        onPressed: () => _submit(loc),
+                        child: Text(loc.get('save_info')),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

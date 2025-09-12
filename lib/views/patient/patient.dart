@@ -5,6 +5,7 @@ import 'package:health_bridge/config/content/language_bottom_sheet.dart';
 import 'package:health_bridge/local/app_localizations.dart';
 import 'package:health_bridge/providers/auth_provider.dart';
 import 'package:health_bridge/my_flutter_app_icons.dart';
+import 'package:health_bridge/views/doctor/community_list.dart';
 import 'package:health_bridge/views/patient/chat_bot_patient.dart';
 import 'package:health_bridge/views/patient/community_patient.dart';
 import 'package:health_bridge/views/patient/home_patient.dart';
@@ -25,7 +26,7 @@ class _PatientState extends ConsumerState<Patient1> {
     HomePatient(),
     RecordsPatient(),
     Medicine(),
-    CommunityPatient(),
+    CommunitiesPage(),
     ChatBotPatient(),
   ];
 

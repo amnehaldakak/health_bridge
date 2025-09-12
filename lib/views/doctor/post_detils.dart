@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:health_bridge/constant/color.dart';
 import 'package:health_bridge/local/app_localizations.dart';
 import 'package:health_bridge/models/comment.dart';
 import 'package:health_bridge/models/post.dart';
 import 'package:health_bridge/providers/CommunityProvider.dart';
 import 'package:health_bridge/providers/case_provider.dart';
+import 'package:health_bridge/providers/treatment_pathway_provider.dart';
 
 class PostDetailPage extends ConsumerStatefulWidget {
   final Post post;
@@ -102,8 +104,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                                       fontSize: 14),
                                 ),
                                 Text(
-                                  widget
-                                      .post.timeAgo, // حسب اللغة من Post model
+                                  widget.post.timeAgo,
                                   style: TextStyle(
                                       color: Colors.grey[600], fontSize: 12),
                                 ),
@@ -121,7 +122,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
 
                         const SizedBox(height: 16),
 
-                        // 🔹 إذا هناك حالة مرتبطة، عرض معلوماتها بدون زر
+                        // 🔹 إذا هناك حالة مرتبطة، عرض معلوماتها + الأدوية
                         if (widget.post.caseId != null)
                           Card(
                             margin: const EdgeInsets.symmetric(vertical: 8),
@@ -146,14 +147,96 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                                                   fontSize: 16),
                                             ),
                                             const SizedBox(height: 8),
-                                            Text(
-                                              "${loc.get('main_complaint')}: ${caseState.medicalCase!.chiefComplaint ?? loc.get('not_specified')}",
-                                            ),
-                                            Text(
-                                              "${loc.get('symptoms')}: ${caseState.medicalCase!.symptoms ?? loc.get('not_specified')}",
-                                            ),
-                                            Text(
-                                              "${loc.get('diagnosis')}: ${caseState.medicalCase!.diagnosis ?? loc.get('not_specified')}",
+
+                                            // 🟢 جميع معلومات الحالة
+                                            _buildInfoRow(
+                                                loc.get('main_complaint'),
+                                                caseState.medicalCase!
+                                                    .chiefComplaint,
+                                                loc),
+                                            _buildInfoRow(
+                                                loc.get('symptoms'),
+                                                caseState.medicalCase!.symptoms,
+                                                loc),
+                                            _buildInfoRow(
+                                                loc.get('diagnosis'),
+                                                caseState
+                                                    .medicalCase!.diagnosis,
+                                                loc),
+                                            _buildInfoRow(
+                                                loc.get('medical_history'),
+                                                caseState.medicalCase!
+                                                    .medicalHistory,
+                                                loc),
+
+                                            _buildInfoRow(
+                                                loc.get('examinations'),
+                                                caseState.medicalCase!
+                                                    .clinicalExaminationResults,
+                                                loc),
+
+                                            const SizedBox(height: 12),
+
+                                            // 🟢 الأدوية
+                                            Consumer(
+                                              builder: (context, ref, _) {
+                                                final medications = ref.watch(
+                                                    medicationGroupProvider(
+                                                        widget.post.caseId!));
+
+                                                return medications.when(
+                                                  data: (medGroup) {
+                                                    if (medGroup.medications ==
+                                                            null ||
+                                                        medGroup.medications!
+                                                            .isEmpty) {
+                                                      return Text(loc.get(
+                                                          'no_medications'));
+                                                    }
+                                                    return Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          loc.get(
+                                                              'medications'),
+                                                          style:
+                                                              const TextStyle(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  fontSize: 15),
+                                                        ),
+                                                        const SizedBox(
+                                                            height: 6),
+                                                        ...medGroup.medications!
+                                                            .map(
+                                                          (med) => Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .symmetric(
+                                                                    vertical:
+                                                                        2),
+                                                            child: Text(
+                                                              "- ${med.name} (${med.dosage ?? ''})",
+                                                              style:
+                                                                  const TextStyle(
+                                                                      fontSize:
+                                                                          14),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    );
+                                                  },
+                                                  loading: () => const Center(
+                                                      child:
+                                                          CircularProgressIndicator()),
+                                                  error: (err, _) => Text(
+                                                      "⚠ ${loc.get('error_loading_medications')}"),
+                                                );
+                                              },
                                             ),
                                           ],
                                         ),
@@ -213,6 +296,33 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
     );
   }
 
+  Widget _buildInfoRow(String label, String? value, AppLocalizations loc) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: "$label: ",
+              style: const TextStyle(
+                fontSize: 14,
+                color: blue3, // اللون الأزرق للليبل
+              ),
+            ),
+            TextSpan(
+              text:
+                  value?.isNotEmpty == true ? value : loc.get('not_specified'),
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.black, // اللون الأسود للقيمة
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildCommentCard(Comment comment, String localeCode) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -239,7 +349,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                 ),
                 const Spacer(),
                 Text(
-                  comment.timeAgo(localeCode), // الوقت حسب اللغة المختارة
+                  comment.timeAgo(localeCode),
                   style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
               ],

@@ -55,3 +55,40 @@ final filteredHealthValuesProvider = Provider<List<HealthValue>>((ref) {
   filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
   return filtered;
 });
+// ================= Latest Blood Pressure Today =================
+final latestBloodPressureTodayProvider = Provider<HealthValue?>((ref) {
+  final values = ref.watch(bloodPressureValuesProvider);
+  final selectedDate = ref.watch(selectedDateProvider);
+
+  // جلب القيم المسجلة في نفس اليوم
+  final todayValues = values.where((val) =>
+      val.createdAt.year == selectedDate.year &&
+      val.createdAt.month == selectedDate.month &&
+      val.createdAt.day == selectedDate.day);
+
+  if (todayValues.isEmpty) return null;
+
+  // ترتيب القيم حسب الوقت واختيار الأحدث
+  final sorted = todayValues.toList()
+    ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+  return sorted.first;
+});
+
+// ================= Latest Sugar Today =================
+final latestSugarTodayProvider = Provider<HealthValue?>((ref) {
+  final values = ref.watch(sugarValuesProvider);
+  final selectedDate = ref.watch(selectedDateProvider);
+
+  final todayValues = values.where((val) =>
+      val.createdAt.year == selectedDate.year &&
+      val.createdAt.month == selectedDate.month &&
+      val.createdAt.day == selectedDate.day);
+
+  if (todayValues.isEmpty) return null;
+
+  final sorted = todayValues.toList()
+    ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+  return sorted.first;
+});

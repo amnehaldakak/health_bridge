@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:health_bridge/constant/link.dart';
 import 'package:health_bridge/main.dart';
 import 'package:health_bridge/models/case.dart';
+import 'package:health_bridge/models/doctor.dart';
 import 'package:health_bridge/models/medication_group.dart';
 import 'package:health_bridge/models/medication_time.dart';
 import 'package:health_bridge/models/patient.dart';
@@ -355,12 +356,18 @@ class ApiService {
     }
   }
 
-  static Future<String> sendMessage(String question) async {
+  static Future<String> sendMessage(
+      String question, Map<String, dynamic> patientData) async {
     try {
       final response = await http.post(
         Uri.parse("${serverLink2}ask"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"user_question": question}),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({
+          "user_question": question,
+          "data": patientData["data"], // هذا اللي رجع من getPatientData
+        }),
       );
 
       if (response.statusCode == 200) {
@@ -1008,5 +1015,169 @@ class ApiService {
       print('Error fetching case details: $e');
     }
     return null;
+  }
+
+  Future<List<Map<String, dynamic>>> getPublicCommunities() async {
+    final url = Uri.parse('$serverLink$getPublicCommunitiesLink');
+    final response = await http.get(url, headers: headers);
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> jsonData = jsonDecode(response.body);
+      final List<dynamic> data = jsonData['communities'] ?? [];
+      return data.map((e) => e as Map<String, dynamic>).toList();
+    } else {
+      throw Exception('فشل في جلب المجتمعات العامة');
+    }
+  }
+
+  /// جلب الأطباء بحالة pending
+  Future<List<DoctorModel>> getPendingDoctors() async {
+    final url = Uri.parse('$serverLink$pendingDoctorsLink');
+    final response = await http.get(url, headers: headers);
+
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      // تحويل كل عنصر إلى DoctorModel مباشرة
+      if (body is List) {
+        return body.map<DoctorModel>((e) => DoctorModel.fromJson(e)).toList();
+      }
+      if (body is Map && body['data'] is List) {
+        return (body['data'] as List)
+            .map<DoctorModel>((e) => DoctorModel.fromJson(e))
+            .toList();
+      }
+      throw Exception("Unexpected response format");
+    } else {
+      throw Exception("Failed: ${response.statusCode}");
+    }
+  }
+
+  /// تحميل شهادة الطبيب كـ Bytes (PDF/Image)
+  Future<Uint8List> showCertificate(int doctorId) async {
+    final url = Uri.parse('$serverLink$showCertificateLink/$doctorId');
+
+    final response = await http.post(
+      url,
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      return response.bodyBytes; // هنا عندك الملف الخام
+    } else {
+      throw Exception("فشل تحميل الشهادة: ${response.statusCode}");
+    }
+  }
+
+  /// الموافقة أو رفض الطبيب
+  Future<String> approveOrRejectDoctor(int doctorId, String action) async {
+    // action = 'approve' أو 'reject'
+    final url = Uri.parse('$serverLink$approveDoctorsLink/$doctorId');
+    final response = await http.post(
+      url,
+      headers: headers,
+      body: jsonEncode({'action': action}),
+    );
+
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      return body['message'] ?? 'تمت العملية بنجاح';
+    } else {
+      throw Exception("فشل العملية: ${response.statusCode}");
+    }
+  }
+
+  // 2. الموافقة على طلب
+  Future<void> approveRequest(String id) async {
+    final response = await http.post(
+      Uri.parse('$serverLink$approveLink/$id'),
+      headers: headers,
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to approve request');
+    }
+  }
+
+  // 3. رفض طلب
+  Future<void> rejectRequest(String id) async {
+    final response = await http.post(
+      Uri.parse('$serverLink$rejectLink/$id'),
+      headers: headers,
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to reject request');
+    }
+  }
+
+  // 4. جلب طلبات المرضى
+  Future<List<dynamic>> getRequestsForPatients() async {
+    final response = await http.get(
+      Uri.parse('$serverLink$requestsForPatientsLink'),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to load requests for patients');
+    }
+  }
+
+  // 5. جلب تفاصيل طلب محدد
+  Future<Map<String, dynamic>> getRequest(String id) async {
+    final response = await http.get(
+      Uri.parse('$serverLink$requestLink/$id'),
+      headers: headers,
+    );
+    print(response.statusCode);
+    if (response.statusCode == 202) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to load request details');
+    }
+  }
+
+  Future<Map<String, dynamic>> getPatientData() async {
+    final url = Uri.parse("$serverLink$getPatientDataLink");
+
+    final response = await http.get(
+      url,
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception("فشل في جلب البيانات: ${response.statusCode}");
+    }
+  }
+
+  // جلب عدد المستخدمين
+  Future<Map<String, dynamic>> getUserCount() async {
+    final response = await http.get(
+      Uri.parse('$serverLink$getUserCountLink'),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to load user count');
+    }
+  }
+
+  // جلب عدد المجتمعات
+  Future<Map<String, dynamic>> getCommunityCount() async {
+    final response = await http.get(
+      Uri.parse('$serverLink$getCommunityCountLink'),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to load community count');
+    }
   }
 }

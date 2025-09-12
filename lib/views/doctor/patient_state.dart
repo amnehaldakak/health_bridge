@@ -35,7 +35,7 @@ class _PatientStateState extends ConsumerState<PatientState> {
     _initializeControllers();
     _initializeMedications();
     Future.microtask(() {
-      ref.read(communitiesPageProvider).fetchCommunities();
+      ref.read(communitiesPageControllerProvider).fetchCommunities();
     });
   }
 
@@ -194,7 +194,7 @@ class _PatientStateState extends ConsumerState<PatientState> {
         return;
       }
 
-      await ref.read(communitiesPageProvider).shareMedicalCase(
+      await ref.read(communitiesPageControllerProvider).shareMedicalCase(
             caseId: caseId,
             communityId: communityId,
             title: title,
@@ -202,7 +202,7 @@ class _PatientStateState extends ConsumerState<PatientState> {
             includeTreatmentPlan: includeTreatment,
           );
 
-      final provider = ref.read(communitiesPageProvider);
+      final provider = ref.read(communitiesPageControllerProvider);
 
       if (provider.errorMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -219,7 +219,7 @@ class _PatientStateState extends ConsumerState<PatientState> {
   // 🟢 اختيار المجتمع من BottomSheet
   // 🟢 اختيار المجتمع من BottomSheet (المجتمعات الخاصة فقط)
   Future<void> _shareCase() async {
-    final communitiesProvider = ref.read(communitiesPageProvider);
+    final communitiesProvider = ref.read(communitiesPageControllerProvider);
 
     // جلب فقط المجتمعات الخاصة والمنضم إليها
     final privateCommunities = communitiesProvider.communities

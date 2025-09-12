@@ -16,19 +16,20 @@ class ProfilePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(profileProvider);
     final controller = ref.read(profileControllerProvider);
+    final loc = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.get('profile')),
+        title: Text(loc!.get('profile')),
       ),
       body: profileAsync.when(
         data: (profile) {
-          final user = profile?.user;
-          final doctor = profile?.doctor;
+          final user = profile.user;
+          final doctor = profile.doctor;
+          final patient = profile.patient;
 
           if (user == null) {
-            return Center(
-                child: Text(AppLocalizations.of(context)!.get('no_data')));
+            return Center(child: Text(loc.get('no_data')));
           }
 
           // بناء رابط الصورة بشكل صحيح
@@ -54,97 +55,113 @@ class ProfilePage extends ConsumerWidget {
                 Text(user.email ?? '-',
                     style: Theme.of(context).textTheme.bodyMedium),
                 const SizedBox(height: 20),
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.verified_user),
-                    title: Text(AppLocalizations.of(context)!.get('status')),
-                    subtitle: Text(
-                      (user.isApproved ?? 0) == 1
-                          ? AppLocalizations.of(context)!.get('active')
-                          : AppLocalizations.of(context)!.get('pending'),
-                      style: Theme.of(context).textTheme.bodyMedium,
+
+                // عرض بيانات المريض إذا موجود
+                if (patient != null) ...[
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.cake),
+                      title: Text(loc.get('birth_date')),
+                      subtitle: Text(patient.birthDate),
                     ),
                   ),
-                ),
-                if (doctor != null) ...[
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.male),
+                      title: Text(loc.get('gender')),
+                      subtitle: Text(patient.gender),
+                    ),
+                  ),
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.phone),
+                      title: Text(loc.get('phone')),
+                      subtitle: Text(patient.phone),
+                    ),
+                  ),
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.medical_services),
+                      title: Text(loc.get('chronic_diseases')),
+                      subtitle: Text(patient.chronicDiseases),
+                    ),
+                  ),
+                  if (patient.casesCount != null)
+                    Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.folder),
+                        title: Text(loc.get('cases_count')),
+                        subtitle: Text(patient.casesCount.toString()),
+                      ),
+                    ),
+                ] else if (doctor != null) ...[
+                  // بيانات الطبيب
                   Card(
                     child: Column(
                       children: [
                         ListTile(
                           leading: const Icon(Icons.local_hospital),
-                          title: Text(AppLocalizations.of(context)!
-                              .get('specialization')),
-                          subtitle: Text(doctor.specialization ?? '-',
-                              style: Theme.of(context).textTheme.bodyMedium),
+                          title: Text(loc.get('specialization')),
+                          subtitle: Text(doctor.specialization ?? '-'),
                         ),
                         Divider(color: Theme.of(context).dividerColor),
                         ListTile(
                           leading: const Icon(Icons.location_on),
-                          title: Text(AppLocalizations.of(context)!
-                              .get('clinic_address')),
-                          subtitle: Text(doctor.clinicAddress ?? '-',
-                              style: Theme.of(context).textTheme.bodyMedium),
+                          title: Text(loc.get('clinic_address')),
+                          subtitle: Text(doctor.clinicAddress ?? '-'),
                         ),
                         Divider(color: Theme.of(context).dividerColor),
                         ListTile(
                           leading: const Icon(Icons.phone),
-                          title: Text(AppLocalizations.of(context)!
-                              .get('clinic_phone')),
-                          subtitle: Text(doctor.clinicPhone ?? '-',
-                              style: Theme.of(context).textTheme.bodyMedium),
+                          title: Text(loc.get('clinic_phone')),
+                          subtitle: Text(doctor.clinicPhone ?? '-'),
                         ),
                         Divider(color: Theme.of(context).dividerColor),
                         ListTile(
                           leading: const Icon(Icons.verified),
-                          title: Text(AppLocalizations.of(context)!
-                              .get('verification_status')),
-                          subtitle: Text(doctor.verificationStatus ?? '-',
-                              style: Theme.of(context).textTheme.bodyMedium),
+                          title: Text(loc.get('verification_status')),
+                          subtitle: Text(doctor.verificationStatus ?? '-'),
                         ),
                       ],
                     ),
                   ),
                 ],
+
                 const SizedBox(height: 30),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     ElevatedButton.icon(
                       icon: const Icon(Icons.edit),
-                      label: Text(AppLocalizations.of(context)!.get('edit')),
+                      label: Text(loc.get('edit')),
                       onPressed: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                EditProfilePage(profile: profile!),
+                                EditProfilePage(profile: profile),
                           ),
                         );
                       },
                     ),
                     OutlinedButton.icon(
                       icon: const Icon(Icons.delete),
-                      label: Text(
-                          AppLocalizations.of(context)!.get('delete_account')),
+                      label: Text(loc.get('delete_account')),
                       onPressed: () async {
                         final confirm = await showDialog<bool>(
                           context: context,
                           builder: (ctx) => AlertDialog(
-                            title: Text(AppLocalizations.of(context)!
-                                .get('confirm_delete')),
-                            content: Text(AppLocalizations.of(context)!
-                                .get('confirm_delete_message')),
+                            title: Text(loc.get('confirm_delete')),
+                            content: Text(loc.get('confirm_delete_message')),
                             actions: [
                               TextButton(
-                                  child: Text(AppLocalizations.of(context)!
-                                      .get('cancel')),
+                                  child: Text(loc.get('cancel')),
                                   onPressed: () => Navigator.pop(ctx, false)),
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                     backgroundColor:
                                         Theme.of(context).colorScheme.error),
-                                child: Text(AppLocalizations.of(context)!
-                                    .get('delete')),
+                                child: Text(loc.get('delete')),
                                 onPressed: () => Navigator.pop(ctx, true),
                               ),
                             ],
@@ -166,39 +183,24 @@ class ProfilePage extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(
-            child: Text(
-                "${AppLocalizations.of(context)!.get('error')}: ${err.toString()}")),
+        error: (err, _) =>
+            Center(child: Text("${loc!.get('error')}: ${err.toString()}")),
       ),
     );
   }
 
-  // دالة لعرض صورة البروفايل بشكل صحيح
   Widget _buildProfileImage(String? imageUrl) {
     if (imageUrl != null && imageUrl.isNotEmpty) {
-      return CachedNetworkImage(
-        imageUrl: imageUrl,
-        imageBuilder: (context, imageProvider) => CircleAvatar(
-          radius: 50,
-          backgroundImage: imageProvider,
-        ),
-        placeholder: (context, url) => CircleAvatar(
-          radius: 50,
-          backgroundColor: Colors.grey[300],
-          child: const CircularProgressIndicator(),
-        ),
-        errorWidget: (context, url, error) => CircleAvatar(
-          radius: 50,
-          backgroundColor: Colors.grey[300],
-          backgroundImage: const AssetImage("assets/images/avatar.png"),
-          child: const Icon(Icons.error, color: Colors.red),
-        ),
+      return CircleAvatar(
+        radius: 50,
+        backgroundImage: NetworkImage(imageUrl),
+        backgroundColor: Colors.grey[300],
       );
     } else {
       return const CircleAvatar(
         radius: 50,
         backgroundColor: Colors.grey,
-        backgroundImage: AssetImage("assets/images/avatar.png"),
+        backgroundImage: AssetImage("assets/profile.jpg"),
       );
     }
   }

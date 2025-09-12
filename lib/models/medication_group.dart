@@ -2,7 +2,7 @@ import 'medication_time.dart';
 
 class MedicationGroup {
   final int groupId;
-  final int caseId;
+  final int? caseId;
   final int patientId;
   final int doctorId;
   final String prescriptionDate;
@@ -13,7 +13,7 @@ class MedicationGroup {
 
   MedicationGroup({
     required this.groupId,
-    required this.caseId,
+    this.caseId,
     required this.patientId,
     required this.doctorId,
     required this.prescriptionDate,
@@ -25,17 +25,27 @@ class MedicationGroup {
 
   factory MedicationGroup.fromJson(Map<String, dynamic> json) {
     return MedicationGroup(
-      groupId: json['group_id'],
-      caseId: json['case_id'],
-      patientId: json['patient_id'],
-      doctorId: json['doctor_id'],
-      prescriptionDate: json['prescription_date'],
-      description: json['description'],
-      createdAt: json['created_at'],
-      updatedAt: json['updated_at'],
-      medications: (json['medications'] as List<dynamic>)
-          .map((m) => MedicationTime.fromJson(m))
-          .toList(),
+      groupId: (json['group_id'] != null)
+          ? int.tryParse(json['group_id'].toString()) ?? 0
+          : 0,
+      caseId: (json['case_id'] != null)
+          ? int.tryParse(json['case_id'].toString())
+          : null,
+      patientId: (json['patient_id'] != null)
+          ? int.tryParse(json['patient_id'].toString()) ?? 0
+          : 0,
+      doctorId: (json['doctor_id'] != null)
+          ? int.tryParse(json['doctor_id'].toString()) ?? 0
+          : 0,
+      prescriptionDate: json['prescription_date']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      createdAt: json['created_at']?.toString() ?? '',
+      updatedAt: json['updated_at']?.toString() ?? '',
+      medications: (json['medications'] != null && json['medications'] is List)
+          ? (json['medications'] as List<dynamic>)
+              .map((m) => MedicationTime.fromJson(m))
+              .toList()
+          : [],
     );
   }
 

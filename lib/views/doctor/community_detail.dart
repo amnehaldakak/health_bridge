@@ -1,12 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:health_bridge/config/content/build_post_card.dart';
 import 'package:health_bridge/constant/color.dart';
 import 'package:health_bridge/local/app_localizations.dart';
 import 'package:health_bridge/models/community.dart';
 import 'package:health_bridge/models/post.dart';
 import 'package:health_bridge/providers/CommunityProvider.dart';
-import 'package:health_bridge/views/doctor/patient_state.dart';
-import 'package:health_bridge/views/doctor/post_detils.dart';
+import 'package:image_picker/image_picker.dart';
 
 class CommunityDetailPage extends ConsumerStatefulWidget {
   final Community community;
@@ -21,7 +23,6 @@ class CommunityDetailPage extends ConsumerStatefulWidget {
 class _CommunityDetailPageState extends ConsumerState<CommunityDetailPage> {
   late Community community;
   late bool isMember;
-  String dropdownValue = 'Member';
 
   @override
   void initState() {
@@ -29,7 +30,6 @@ class _CommunityDetailPageState extends ConsumerState<CommunityDetailPage> {
     community = widget.community;
     isMember = widget.community.isMember;
 
-    // جلب تفاصيل المجتمع والمنشورات
     Future.microtask(() {
       ref.read(communityProvider).fetchCommunityDetails(community.id);
     });
@@ -40,7 +40,6 @@ class _CommunityDetailPageState extends ConsumerState<CommunityDetailPage> {
     final titleController = TextEditingController();
     final contentController = TextEditingController();
     final loc = AppLocalizations.of(context);
-
     bool isPosting = false;
 
     showDialog(
@@ -51,8 +50,7 @@ class _CommunityDetailPageState extends ConsumerState<CommunityDetailPage> {
           builder: (context, setState) {
             return Dialog(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
+                  borderRadius: BorderRadius.circular(20)),
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: SingleChildScrollView(
@@ -65,10 +63,8 @@ class _CommunityDetailPageState extends ConsumerState<CommunityDetailPage> {
                         children: [
                           Text(
                             loc!.get('create_new_post'),
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: const TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           IconButton(
                             onPressed: () => Navigator.pop(ctx),
@@ -83,8 +79,7 @@ class _CommunityDetailPageState extends ConsumerState<CommunityDetailPage> {
                           labelText: loc.get('title_optional'),
                           prefixIcon: const Icon(Icons.title),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                              borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -96,8 +91,7 @@ class _CommunityDetailPageState extends ConsumerState<CommunityDetailPage> {
                           alignLabelWithHint: true,
                           prefixIcon: const Icon(Icons.edit_note),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                              borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -107,10 +101,8 @@ class _CommunityDetailPageState extends ConsumerState<CommunityDetailPage> {
                           TextButton(
                             onPressed:
                                 isPosting ? null : () => Navigator.pop(ctx),
-                            child: Text(
-                              loc.get('cancel'),
-                              style: TextStyle(color: Colors.red),
-                            ),
+                            child: Text(loc.get('cancel'),
+                                style: const TextStyle(color: Colors.red)),
                           ),
                           const SizedBox(width: 12),
                           ElevatedButton(
@@ -119,8 +111,7 @@ class _CommunityDetailPageState extends ConsumerState<CommunityDetailPage> {
                                   Theme.of(context).colorScheme.primary,
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                                  borderRadius: BorderRadius.circular(12)),
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 20, vertical: 12),
                             ),
@@ -131,13 +122,11 @@ class _CommunityDetailPageState extends ConsumerState<CommunityDetailPage> {
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(
                                         SnackBar(
-                                          content:
-                                              Text(loc.get('content_required')),
-                                        ),
+                                            content: Text(
+                                                loc.get('content_required'))),
                                       );
                                       return;
                                     }
-
                                     setState(() => isPosting = true);
 
                                     await ref
@@ -156,12 +145,9 @@ class _CommunityDetailPageState extends ConsumerState<CommunityDetailPage> {
                                             .errorMessage ==
                                         null) {
                                       Navigator.pop(ctx);
-
-                                      // تحديث الصفحة لإظهار المنشور الجديد
                                       await ref
                                           .read(communityProvider)
                                           .fetchCommunityDetails(community.id);
-
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(
                                         SnackBar(
@@ -180,19 +166,17 @@ class _CommunityDetailPageState extends ConsumerState<CommunityDetailPage> {
                                     }
                                   },
                             child: isPosting
-                                ? SizedBox(
+                                ? const SizedBox(
                                     height: 20,
                                     width: 20,
                                     child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
+                                        strokeWidth: 2, color: Colors.white),
                                   )
                                 : Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.send),
-                                      SizedBox(width: 8),
+                                      const Icon(Icons.send),
+                                      const SizedBox(width: 8),
                                       Text(loc.get('publish')),
                                     ],
                                   ),
@@ -210,7 +194,224 @@ class _CommunityDetailPageState extends ConsumerState<CommunityDetailPage> {
     );
   }
 
-  // 🟢 تحويل التاريخ إلى نسبي
+  // 🟢 دايالوج تعديل المجتمع لأي عضو
+  void _showEditCommunityDialog(BuildContext context) {
+    final nameController = TextEditingController(text: community.name);
+    final descriptionController =
+        TextEditingController(text: community.description);
+    final typeController = TextEditingController(text: community.type);
+    final specializationController =
+        TextEditingController(text: community.specialization ?? "");
+    final loc = AppLocalizations.of(context);
+
+    File? selectedImage;
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            loc!.get('edit_community'),
+                            style: const TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            icon: const Icon(Icons.close, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // اختيار الصورة
+                      GestureDetector(
+                        onTap: () async {
+                          final picker = ImagePicker();
+                          final pickedFile = await picker.pickImage(
+                              source: ImageSource.gallery);
+                          if (pickedFile != null) {
+                            setState(() {
+                              selectedImage = File(pickedFile.path);
+                            });
+                          }
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          height: 150,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey),
+                            image: DecorationImage(
+                              image: selectedImage != null
+                                  ? FileImage(selectedImage!)
+                                  : (community.imageUrl.isNotEmpty
+                                      ? NetworkImage(community.imageUrl)
+                                      : const AssetImage('assets/community.jpg')
+                                          as ImageProvider),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          child: Center(
+                            child: selectedImage == null
+                                ? const Icon(Icons.camera_alt,
+                                    color: Colors.white, size: 40)
+                                : null,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // الحقول النصية
+                      TextField(
+                        controller: nameController,
+                        decoration: InputDecoration(
+                          labelText: loc.get('community_name'),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: descriptionController,
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          labelText: loc.get('description'),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: typeController,
+                        decoration: InputDecoration(
+                          labelText: loc.get('type'),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: specializationController,
+                        decoration: InputDecoration(
+                          labelText: loc.get('specialization'),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // أزرار الإلغاء والحفظ
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed:
+                                isSaving ? null : () => Navigator.pop(ctx),
+                            child: Text(loc.get('cancel'),
+                                style: const TextStyle(color: Colors.red)),
+                          ),
+                          const SizedBox(width: 12),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.primary,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 12),
+                            ),
+                            onPressed: isSaving
+                                ? null
+                                : () async {
+                                    setState(() => isSaving = true);
+
+                                    await ref
+                                        .read(communityProvider)
+                                        .updateCommunity(
+                                          id: community.id,
+                                          name: nameController.text,
+                                          description:
+                                              descriptionController.text,
+                                          type: typeController.text,
+                                          specialization:
+                                              specializationController.text,
+                                          imagePath: selectedImage?.path,
+                                        );
+
+                                    setState(() => isSaving = false);
+
+                                    if (ref
+                                            .read(communityProvider)
+                                            .errorMessage ==
+                                        null) {
+                                      Navigator.pop(ctx);
+                                      await ref
+                                          .read(communityProvider)
+                                          .fetchCommunityDetails(community.id);
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                            content: Text(loc.get(
+                                                'community_updated_success'))),
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            "${loc.get('error')}: ${ref.read(communityProvider).errorMessage}",
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  },
+                            child: isSaving
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2, color: Colors.white),
+                                  )
+                                : Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.save),
+                                      const SizedBox(width: 8),
+                                      Text(loc.get('save')),
+                                    ],
+                                  ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // تحويل التاريخ إلى نسبي
   String getRelativeTime(DateTime dateTime, AppLocalizations loc) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
@@ -224,133 +425,6 @@ class _CommunityDetailPageState extends ConsumerState<CommunityDetailPage> {
     } else {
       return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
     }
-  }
-
-  // 🟢 كرت المنشور
-  Widget _buildPostCard(BuildContext context, Post post, AppLocalizations loc) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => PostDetailPage(post: post)),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // معلومات الكاتب والوقت
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundImage: post.authorImageUrl != null
-                        ? NetworkImage(post.authorImageUrl!)
-                        : const AssetImage("assets/profile.jpg")
-                            as ImageProvider,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          post.authorName,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 14),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          post.createdAt != null
-                              ? getRelativeTime(post.createdAt!, loc)
-                              : '',
-                          style:
-                              TextStyle(color: Colors.grey[600], fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // عنوان المنشور
-              if (post.title != null && post.title!.isNotEmpty)
-                Text(post.title!,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16)),
-              if (post.title != null && post.title!.isNotEmpty)
-                const SizedBox(height: 8),
-
-              // محتوى المنشور
-              Text(
-                post.content ?? '',
-                style: const TextStyle(fontSize: 14),
-              ),
-
-              const Divider(height: 24),
-
-              // أزرار التفاعل
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  _buildActionButton(Icons.comment, loc.get('comment'), 0, loc),
-                ],
-              ),
-
-              // 🔹 زر عرض تفاصيل الحالة الطبية إذا كان موجود
-              if (post.caseId != null) const SizedBox(height: 12),
-              if (post.caseId != null)
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PostDetailPage(
-                            post: post,
-                            // يجب أن يحتوي post على medicalCase
-                          ),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.medical_services, size: 18),
-                    label: Text(loc.get('view_case')),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
-                      textStyle: const TextStyle(fontSize: 12),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButton(
-      IconData icon, String label, int count, AppLocalizations loc) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: Colors.grey[600]),
-        const SizedBox(width: 4),
-        Text(
-          '$count $label',
-          style: TextStyle(color: Colors.grey[600], fontSize: 12),
-        ),
-      ],
-    );
   }
 
   @override
@@ -371,6 +445,15 @@ class _CommunityDetailPageState extends ConsumerState<CommunityDetailPage> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(community.name),
+          actions: [
+            // أي عضو يمكنه تعديل المجتمع
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () {
+                _showEditCommunityDialog(context);
+              },
+            ),
+          ],
         ),
         body: provider.isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -411,11 +494,10 @@ class _CommunityDetailPageState extends ConsumerState<CommunityDetailPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                community.name,
-                                style: const TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.bold),
-                              ),
+                              Text(community.name,
+                                  style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold)),
                               const SizedBox(height: 4),
                               Text(
                                 community.description.isNotEmpty
@@ -475,13 +557,9 @@ class _CommunityDetailPageState extends ConsumerState<CommunityDetailPage> {
                                       width: 30,
                                       height: 30,
                                       decoration: const ShapeDecoration(
-                                        color: blue3,
-                                        shape: OvalBorder(),
-                                      ),
-                                      child: const Icon(
-                                        Icons.post_add_rounded,
-                                        color: Colors.white,
-                                      ),
+                                          color: blue3, shape: OvalBorder()),
+                                      child: const Icon(Icons.post_add_rounded,
+                                          color: Colors.white),
                                     ),
                                     const SizedBox(width: 12),
                                     Text(
@@ -510,7 +588,7 @@ class _CommunityDetailPageState extends ConsumerState<CommunityDetailPage> {
                     )
                   else
                     ...posts
-                        .map((post) => _buildPostCard(context, post, loc))
+                        .map((post) => buildPostCard(context, post, loc))
                         .toList(),
                 ],
               ),

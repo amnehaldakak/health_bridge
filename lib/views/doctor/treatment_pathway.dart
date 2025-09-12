@@ -26,8 +26,8 @@ class TreatmentPathway extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title:
-            Text(loc!.get('treatment_pathway'), style: TextStyle(fontSize: 20)),
+        title: Text(loc!.get('treatment_pathway'),
+            style: const TextStyle(fontSize: 20)),
         centerTitle: true,
       ),
       floatingActionButton: role == "doctor"
@@ -45,7 +45,13 @@ class TreatmentPathway extends ConsumerWidget {
           : null,
       body: medicationGroupAsync.when(
         data: (group) {
-          // تحويل بيانات المسار العلاجي إلى قائمة TreatmentPlan واحدة
+          // إذا البيانات فاضية
+          if (group.medications.isEmpty &&
+              (group.description?.isEmpty ?? true)) {
+            return _buildEmptyState(theme, loc, role, context);
+          }
+
+          // إذا فيه بيانات لمسار علاجي
           final treatmentPlans = [
             TreatmentPlan(
               name: loc.get('treatment_plan'),
@@ -68,8 +74,43 @@ class TreatmentPathway extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) =>
-            Center(child: Text('${loc.get('error_occurred')}: $e')),
+        error: (e, _) {
+          if (e.toString().contains("404")) {
+            return _buildEmptyState(theme, loc, role, context);
+          }
+          return Center(child: Text('${loc.get('error_occurred')}: $e'));
+        },
+      ),
+    );
+  }
+
+  /// شاشة عند عدم وجود مسار علاجي
+  Widget _buildEmptyState(ThemeData theme, AppLocalizations loc, String role,
+      BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            loc.get('no_treatment_pathway'),
+            style: theme.textTheme.bodyLarge,
+          ),
+          if (role == "doctor") ...[
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.add),
+              label: Text(loc.get('add_treatment_pathway')),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddTreatmentPathway(caseId: caseId),
+                  ),
+                );
+              },
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -110,7 +151,7 @@ class TreatmentPathway extends ConsumerWidget {
     void _editMedication(MedicationTime medication,
         {required int planIndex}) async {
       String amount = medication.dosage;
-      int timesPerDay = medication.frequency;
+      int? timesPerDay = medication.frequency;
 
       final result = await showDialog<MedicationTime>(
         context: ref.context,

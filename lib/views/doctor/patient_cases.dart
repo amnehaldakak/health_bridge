@@ -21,12 +21,6 @@ class PatientCasesPage extends ConsumerWidget {
     final loc = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: role == "patient"
-          ? AppBar(
-              title: Text(loc!.get('my_cases')),
-              centerTitle: true,
-            )
-          : null,
       body: RefreshIndicator(
         onRefresh: () async {
           await ref.read(patientCasesProvider(patient).notifier).refreshCases();

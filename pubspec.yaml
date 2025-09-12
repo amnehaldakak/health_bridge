@@ -46,7 +46,7 @@ dependencies:
   file_picker: ^10.3.1
   http: ^1.5.0
   path: ^1.8.3
-  device_info_plus: ^11.3.0
+  device_info_plus: 10.1.2
   shared_preferences: ^2.5.3
   image_picker: ^1.2.0
   flutter_localization: ^0.3.3
@@ -54,6 +54,11 @@ dependencies:
   cached_network_image: ^3.4.1
   google_fonts: ^6.3.0
   timeago: ^3.6.0
+  flutter_svg: ^2.0.10
+  fl_chart: ^0.68.0
+  syncfusion_flutter_pdfviewer: ^27.1.48
+
+
 
 
 
@@ -93,6 +98,8 @@ flutter:
   assets:
     - assets/profile.jpg
     - assets/community.jpg
+    - assets/images/
+    - assets/icons/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

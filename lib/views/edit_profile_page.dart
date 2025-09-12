@@ -18,9 +18,17 @@ class EditProfilePage extends ConsumerStatefulWidget {
 class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   late TextEditingController _nameController;
   late TextEditingController _emailController;
+
+  // دكتور
   late TextEditingController _specializationController;
   late TextEditingController _clinicAddressController;
   late TextEditingController _clinicPhoneController;
+
+  // مريض
+  late TextEditingController _birthDateController;
+  late TextEditingController _genderController;
+  late TextEditingController _phoneController;
+  late TextEditingController _chronicDiseasesController;
 
   File? _profileImage;
   final _formKey = GlobalKey<FormState>();
@@ -30,23 +38,43 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     super.initState();
     final profile = widget.profile;
 
+    // مشترك
     _nameController = TextEditingController(text: profile.user.name);
     _emailController = TextEditingController(text: profile.user.email);
+
+    // دكتور
     _specializationController =
         TextEditingController(text: profile.doctor?.specialization ?? '');
     _clinicAddressController =
         TextEditingController(text: profile.doctor?.clinicAddress ?? '');
     _clinicPhoneController =
         TextEditingController(text: profile.doctor?.clinicPhone ?? '');
+
+    // مريض
+    _birthDateController =
+        TextEditingController(text: profile.patient?.birthDate ?? '');
+    _genderController =
+        TextEditingController(text: profile.patient?.gender ?? '');
+    _phoneController =
+        TextEditingController(text: profile.patient?.phone ?? '');
+    _chronicDiseasesController =
+        TextEditingController(text: profile.patient?.chronicDiseases ?? '');
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+
     _specializationController.dispose();
     _clinicAddressController.dispose();
     _clinicPhoneController.dispose();
+
+    _birthDateController.dispose();
+    _genderController.dispose();
+    _phoneController.dispose();
+    _chronicDiseasesController.dispose();
+
     super.dispose();
   }
 
@@ -62,14 +90,26 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final extraFields = {
-      if (_specializationController.text.isNotEmpty)
+    final profile = widget.profile;
+
+    final extraFields = <String, String>{};
+
+    if (profile.user.role == 'doctor' && profile.doctor != null) {
+      extraFields.addAll({
         'specialization': _specializationController.text,
-      if (_clinicAddressController.text.isNotEmpty)
         'clinic_address': _clinicAddressController.text,
-      if (_clinicPhoneController.text.isNotEmpty)
         'clinic_phone': _clinicPhoneController.text,
-    };
+      });
+    }
+
+    if (profile.user.role == 'patient' && profile.patient != null) {
+      extraFields.addAll({
+        'birth_date': _birthDateController.text,
+        'gender': _genderController.text,
+        'phone': _phoneController.text,
+        'chronic_diseases': _chronicDiseasesController.text,
+      });
+    }
 
     try {
       await ref.read(profileControllerProvider).updateProfile(
@@ -79,15 +119,13 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             extraFields: extraFields,
           );
 
-      // إعادة تحميل البروفايل
       ref.invalidate(profileProvider);
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              AppLocalizations.of(context)!.get('save_changes'),
-            ),
+            content:
+                Text(AppLocalizations.of(context)!.get('save_changes_success')),
           ),
         );
         Navigator.pop(context);
@@ -96,9 +134,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              '${AppLocalizations.of(context)!.get('error')}: $e',
-            ),
+            content: Text('${AppLocalizations.of(context)!.get('error')}: $e'),
           ),
         );
       }
@@ -170,7 +206,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
               ),
               const SizedBox(height: 16),
 
-              // بيانات الطبيب
+              // بيانات الدكتور
               if (profile.user.role == 'doctor') ...[
                 TextFormField(
                   controller: _specializationController,
@@ -196,6 +232,43 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     labelText:
                         AppLocalizations.of(context)!.get('clinic_phone'),
                     prefixIcon: const Icon(Icons.phone),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              // بيانات المريض
+              if (profile.user.role == 'patient') ...[
+                TextFormField(
+                  controller: _birthDateController,
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.get('birth_date'),
+                    prefixIcon: const Icon(Icons.calendar_today),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _genderController,
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.get('gender'),
+                    prefixIcon: const Icon(Icons.person),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _phoneController,
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.get('phone'),
+                    prefixIcon: const Icon(Icons.phone),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _chronicDiseasesController,
+                  decoration: InputDecoration(
+                    labelText:
+                        AppLocalizations.of(context)!.get('chronic_diseases'),
+                    prefixIcon: const Icon(Icons.medical_services),
                   ),
                 ),
                 const SizedBox(height: 16),

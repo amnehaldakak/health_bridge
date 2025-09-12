@@ -5,6 +5,7 @@ import 'package:health_bridge/models/medication_time.dart';
 import 'package:health_bridge/models/patient.dart';
 import 'package:health_bridge/models/user.dart';
 import 'package:health_bridge/views/add_medicine.dart';
+import 'package:health_bridge/views/admin/screens/main/main_screen.dart';
 import 'package:health_bridge/views/auth/login.dart';
 import 'package:health_bridge/views/auth/signup.dart';
 import 'package:health_bridge/views/auth/doctor_info.dart';
@@ -178,6 +179,11 @@ final GoRouter appRouter = GoRouter(
       path: '/add_community',
       name: 'add_community',
       pageBuilder: (context, state) => MaterialPage(child: AddCommunity()),
+    ),
+    GoRoute(
+      path: '/admin_dashboard',
+      name: 'admin_dashboard',
+      pageBuilder: (context, state) => MaterialPage(child: MainScreen()),
     ),
   ],
   debugLogDiagnostics: true,

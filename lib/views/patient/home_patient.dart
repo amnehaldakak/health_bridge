@@ -1,30 +1,46 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:health_bridge/config/content/build_post_card.dart';
 import 'package:health_bridge/config/content/health_value_card.dart';
 import 'package:health_bridge/local/app_localizations.dart';
 import 'package:health_bridge/my_flutter_app_icons.dart';
+import 'package:health_bridge/providers/health_value_provider.dart';
+import 'package:health_bridge/providers/random_post_provider.dart';
+import 'package:health_bridge/models/post.dart';
 
-class HomePatient extends StatefulWidget {
+class HomePatient extends ConsumerStatefulWidget {
   const HomePatient({super.key});
 
   @override
-  State<HomePatient> createState() => _HomePatientState();
+  ConsumerState<HomePatient> createState() => _HomePatientState();
 }
 
-class _HomePatientState extends State<HomePatient> {
+class _HomePatientState extends ConsumerState<HomePatient> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
 
+    // جلب آخر القيم لليوم
+    final latestBP = ref.watch(latestBloodPressureTodayProvider);
+    final latestSugar = ref.watch(latestSugarTodayProvider);
+
+    // ✅ جلب البوستات العشوائية
+    final randomPosts = ref.watch(randomPostsProvider);
+
     return Scaffold(
-      body: Container(
-        padding: const EdgeInsets.all(16.0),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          // ✅ استدعاء الفنكشن من StateNotifier
+          await ref.read(randomPostsProvider.notifier).fetchRandomPosts();
+        },
         child: ListView(
+          padding: const EdgeInsets.all(16.0),
           children: [
             // عنوان القسم
             Padding(
               padding: const EdgeInsets.only(bottom: 16.0),
               child: Text(
-                loc!.get('health_status'),
+                loc!.get('last_measurement'),
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -42,7 +58,9 @@ class _HomePatientState extends State<HomePatient> {
                     borderColor: Colors.red,
                     iconColor: Colors.red,
                     icon: MyFlutterApp.noun_blood_pressure_7315638,
-                    text: "${loc.get('blood_pressure')}: 120/80",
+                    text: latestBP != null
+                        ? "${loc.get('blood_pressure')}: ${latestBP.value}"
+                        : "${loc.get('blood_pressure')}: -- / ${latestBP?.valuee ?? '--'}",
                   ),
                 ),
                 Expanded(
@@ -51,7 +69,9 @@ class _HomePatientState extends State<HomePatient> {
                     borderColor: Colors.blue,
                     iconColor: Colors.blue,
                     icon: MyFlutterApp.noun_diabetes_test_7357853,
-                    text: "${loc.get('blood_sugar')}: 120",
+                    text: latestSugar != null
+                        ? "${loc.get('blood_sugar')}: ${latestSugar.value}"
+                        : "${loc.get('blood_sugar')}: --",
                   ),
                 )
               ],
@@ -59,102 +79,31 @@ class _HomePatientState extends State<HomePatient> {
 
             const SizedBox(height: 24),
 
-            // قسم الإحصائيات أو المعلومات الإضافية
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: Text(
-                loc.get('recent_activity'),
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
+            randomPosts.when(
+              data: (posts) {
+                if (posts.isEmpty) {
+                  return Text(
+                    loc.get('no_posts'),
+                    style: const TextStyle(color: Colors.grey),
+                  );
+                }
+                return Column(
+                  children: posts.take(5).map((Post post) {
+                    // 🟢 استخدام الكرت المخصص
+                    return buildPostCard(context, post, loc);
+                  }).toList(),
+                );
+              },
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24.0),
+                  child: CircularProgressIndicator(),
                 ),
               ),
-            ),
-
-            // محتوى إضافي (يمكن استبداله ببيانات حقيقية)
-            Container(
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(12.0),
-                border: Border.all(color: Colors.grey.shade300),
+              error: (err, _) => Text(
+                "خطأ أثناء تحميل البوستات: $err",
+                style: const TextStyle(color: Colors.red),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    loc.get('last_measurement'),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "${loc.get('blood_pressure')}: 120/80 (${loc.get('normal')})",
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  Text(
-                    "${loc.get('blood_sugar')}: 98 (${loc.get('normal')})",
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "${loc.get('measured_on')}: 2023-12-07 10:30",
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // قسم سريع للإجراءات
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: Text(
-                loc.get('quick_actions'),
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ),
-
-            // أزرار الإجراءات السريعة
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () {
-                    // الانتقال إلى صفحة إضافة ضغط الدم
-                  },
-                  icon:
-                      Icon(MyFlutterApp.noun_blood_pressure_7315638, size: 20),
-                  label: Text(loc.get('add_blood_pressure')),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                  ),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    // الانتقال إلى صفحة إضافة السكر
-                  },
-                  icon: Icon(MyFlutterApp.noun_diabetes_test_7357853, size: 20),
-                  label: Text(loc.get('add_blood_sugar')),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                  ),
-                ),
-              ],
             ),
           ],
         ),

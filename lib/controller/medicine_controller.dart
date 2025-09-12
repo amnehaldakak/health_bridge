@@ -37,7 +37,7 @@ class MedicineController
     final meds = state.value ?? [];
     return meds.where((med) {
       final startDate = med.startDate;
-      final endDate = startDate.add(Duration(days: med.duration - 1));
+      final endDate = startDate.add(Duration(days: med.duration! - 1));
       return !selectedDate.isBefore(startDate) &&
           !selectedDate.isAfter(endDate);
     }).toList();
@@ -52,3 +52,15 @@ final medicineProvider =
     return MedicineController(apiService);
   },
 );
+// ================== Provider للأدوية غير المؤكدة ==================
+final unconfirmedMedicineProvider = Provider<List<MedicationTime>>((ref) {
+  final state = ref.watch(medicineProvider);
+
+  if (state is AsyncData<List<MedicationTime>>) {
+    final meds = state.value;
+    // ترجع الأدوية التي patientConfirmed == 0
+    return meds.where((med) => med.patientConfirmed == 0).toList();
+  }
+
+  return [];
+});

@@ -33,7 +33,7 @@ class _DoctorState extends ConsumerState<Doctor> {
       loc!.get('home'),
       loc.get('health_records'),
       loc.get('communities'),
-      loc.get('smart_assistant')
+      // loc.get('smart_assistant')
     ];
   }
 
@@ -41,7 +41,7 @@ class _DoctorState extends ConsumerState<Doctor> {
     const HomeDoctor(),
     const RecordsDoctor(),
     CommunitiesPage(),
-    const ChatBotPatient(),
+    // const ChatBotPatient(),
   ];
 
   @override
@@ -179,10 +179,10 @@ class _DoctorState extends ConsumerState<Doctor> {
             icon: Icon(MyFlutterApp.noun_public_health_7933246, size: 30),
             label: loc.get('community'),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(MyFlutterApp.chatempty, size: 30),
-            label: loc.get('smart_assistant'),
-          ),
+          // BottomNavigationBarItem(
+          //   icon: Icon(MyFlutterApp.chatempty, size: 30),
+          //   label: loc.get('smart_assistant'),
+          // ),
         ],
       ),
     );
