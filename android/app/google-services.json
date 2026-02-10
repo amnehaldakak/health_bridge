@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "710362032071",
+    "project_id": "health-bridge-925df",
+    "storage_bucket": "health-bridge-925df.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:710362032071:android:7ec0c41138610b6f051be2",
+        "android_client_info": {
+          "package_name": "com.example.health_bridge"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC675d7KFg6C_cPIBVHg9O720YuLpRVHMg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
